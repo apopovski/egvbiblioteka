@@ -1,0 +1,35 @@
+{
+  "books": [
+    {
+      "id": "velika-borba",
+      "accent": "#d6aa55",
+      "coverGradient": "linear-gradient(160deg, #0d1828 0%, #14253d 48%, #243851 100%)",
+      "sources": {
+        "sr": {
+          "title": "Велика борба",
+          "author": "Елен Г. Вајт",
+          "filePath": "/absolute/path/to/serbian-book-file.txt",
+          "format": "txt"
+        },
+        "mk": {
+          "title": "Големата борба",
+          "author": "Елен Г. Вајт",
+          "filePath": "/absolute/path/to/macedonian-book-file.txt",
+          "format": "txt"
+        },
+        "hr": {
+          "title": "Velika borba",
+          "author": "Ellen G. White",
+          "filePath": "/absolute/path/to/croatian-book-file.txt",
+          "format": "txt"
+        },
+        "sl": {
+          "title": "Veliki spopad",
+          "author": "Ellen G. White",
+          "filePath": "/absolute/path/to/slovenian-book-file.txt",
+          "format": "txt"
+        }
+      }
+    }
+  ]
+}
