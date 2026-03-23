@@ -148,6 +148,7 @@ const RECENT_BOOKS_KEY = 'egv-recent-books';
 const RECENT_SEARCH_QUERIES_KEY = 'egv-recent-search-queries';
 const PINNED_SEARCH_QUERIES_KEY = 'egv-pinned-search-queries';
 const TOPIC_PATH_COMPLETIONS_KEY = 'egv-topic-path-completions';
+const READER_TEXT_SCALE_KEY = 'egv-reader-text-scale';
 const LOCKED_LANGUAGE: LanguageCode = 'sr';
 
 const LIBRARY_FILTERS: Array<{ id: LibraryFilter; label: string }> = [
@@ -435,6 +436,15 @@ function rememberPinnedSearch(current: string[], query: string) {
   ].slice(0, 6);
 }
 
+function loadReaderTextScale() {
+  if (typeof window === 'undefined') return 1;
+
+  const raw = Number(window.localStorage.getItem(READER_TEXT_SCALE_KEY));
+  if (!Number.isFinite(raw)) return 1;
+
+  return Math.min(1.28, Math.max(0.88, raw));
+}
+
 export default function App() {
   const initialRoute = getInitialRouteState();
   const [dark, setDark] = useDarkMode();
@@ -464,6 +474,7 @@ export default function App() {
   const [recentSearchQueries, setRecentSearchQueries] = useState<string[]>(() => loadRecentSearchQueries());
   const [pinnedSearchQueries, setPinnedSearchQueries] = useState<string[]>(() => loadPinnedSearchQueries());
   const [completedTopicPathSteps, setCompletedTopicPathSteps] = useState<string[]>(() => loadTopicPathCompletions());
+  const [readerTextScale, setReaderTextScale] = useState<number>(() => loadReaderTextScale());
   const [chapterScrollProgress, setChapterScrollProgress] = useState(0);
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>('all');
   const [librarySort, setLibrarySort] = useState<LibrarySort>('featured');
@@ -985,8 +996,12 @@ export default function App() {
 
     return [...chapterResults, ...bookResults];
   }, [discoveryResults.books, groupedDiscoveryChapters, lastReading]);
+  const isReaderTextScaleMin = readerTextScale <= 0.88;
+  const isReaderTextScaleMax = readerTextScale >= 1.28;
+  const readerTextScalePercent = `${Math.round(readerTextScale * 100)}%`;
   const contentCardStyle = {
     '--book-accent': featuredBook.accent,
+    '--reader-content-font-scale': readerTextScale,
   } as CSSProperties;
 
   const syncRoute = (nextLanguage: LanguageCode, nextBookId?: string | null, nextChapterIndex = 0, replace = false) => {
@@ -1177,6 +1192,11 @@ export default function App() {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(TOPIC_PATH_COMPLETIONS_KEY, JSON.stringify(completedTopicPathSteps));
   }, [completedTopicPathSteps]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(READER_TEXT_SCALE_KEY, String(readerTextScale));
+  }, [readerTextScale]);
 
   useEffect(() => {
     if (!isLibraryHome) return;
@@ -1427,6 +1447,14 @@ export default function App() {
 
     const top = window.scrollY + element.getBoundingClientRect().top - 84;
     window.scrollTo({ top: Math.max(top, 0), behavior: 'smooth' });
+  };
+
+  const handleAdjustReaderTextScale = (direction: 'decrease' | 'increase') => {
+    setReaderTextScale((current) => {
+      const delta = direction === 'increase' ? 0.08 : -0.08;
+      const next = Number((current + delta).toFixed(2));
+      return Math.min(1.28, Math.max(0.88, next));
+    });
   };
 
   return (
@@ -2371,6 +2399,30 @@ export default function App() {
                         <span style={{ width: `${Math.round(chapterScrollProgress * 100)}%` }} />
                       </div>
                       <span>{Math.round(chapterScrollProgress * 100)}% poglavlja</span>
+                    </div>
+                    <div className="biblioteka-text-size-control" aria-label="Veličina teksta">
+                      <span>Tekst</span>
+                      <div className="biblioteka-text-size-buttons" role="group" aria-label="Podešavanje veličine teksta">
+                        <button
+                          type="button"
+                          className="biblioteka-text-size-button"
+                          onClick={() => handleAdjustReaderTextScale('decrease')}
+                          disabled={isReaderTextScaleMin}
+                          aria-label="Smanji tekst"
+                        >
+                          −
+                        </button>
+                        <strong>{readerTextScalePercent}</strong>
+                        <button
+                          type="button"
+                          className="biblioteka-text-size-button"
+                          onClick={() => handleAdjustReaderTextScale('increase')}
+                          disabled={isReaderTextScaleMax}
+                          aria-label="Povećaj tekst"
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : null}

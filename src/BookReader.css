@@ -60,12 +60,15 @@ html,body,#root,.reader-root{min-height:100%;margin:0;background:var(--reader-bg
 .reader-main{position:relative}
 .reader-book-html{width:100%}
 .reader-book-html,.reader-book-html *{overflow-wrap:anywhere}
-.reader-book-html p{font-size:1.08rem;line-height:1.86;margin:0 0 1.15rem;color:var(--reader-fg)}
-.reader-book-html > p:first-child{font-size:1.14rem;line-height:1.92}
+.reader-book-html p{font-size:calc(1.08rem * var(--reader-content-font-scale, 1));line-height:calc(1.86 / var(--reader-content-font-scale, 1) + .12);margin:0 0 1.15rem;color:var(--reader-fg)}
+.reader-book-html > p:first-child{font-size:calc(1.14rem * var(--reader-content-font-scale, 1));line-height:calc(1.92 / var(--reader-content-font-scale, 1) + .1)}
 .reader-book-html > p:first-child::first-letter{float:left;margin:.08em .12em 0 0;font-family:'Cinzel','Georgia',serif;font-size:3.3em;line-height:.9;color:color-mix(in srgb, var(--reader-accent) 78%, #a67c2d 12%)}
 .reader-book-html h2,
 .reader-book-html h3,
 .reader-book-html h4{font-family:'Cinzel','Georgia',serif;line-height:1.28;letter-spacing:.02em;color:var(--reader-fg)}
+.reader-book-html h2{font-size:calc(1.5rem * var(--reader-content-font-scale, 1))}
+.reader-book-html h3{font-size:calc(1.3rem * var(--reader-content-font-scale, 1))}
+.reader-book-html h4{font-size:calc(1.15rem * var(--reader-content-font-scale, 1))}
 .chapterhead{margin:0;font-family:'Cinzel','Georgia',serif;font-size:clamp(1.75rem,2.8vw,2.45rem);line-height:1.1;letter-spacing:.01em}
 .reader-toc-list{list-style:none;padding:0;margin:0}
 .reader-toc-item-btn{width:100%;text-align:left;padding:12px 12px;border:1px solid transparent;background:transparent;border-radius:16px;cursor:pointer;display:grid;grid-template-columns:auto 1fr;gap:12px;color:inherit;transition:transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease}
