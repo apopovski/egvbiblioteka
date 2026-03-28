@@ -191,6 +191,24 @@ const CURATED_COLLECTIONS: CuratedCollection[] = [
   },
 ];
 
+const DAILY_DEVOTIONAL = {
+  label: 'Dnevno razmišljanje',
+  title: 'Prebivalište za Duha',
+  source: 'Revju i Herald (Review and Herald), 31. decembar 1908',
+  paragraphs: [
+    'Hristos je predstavljen kao Onaj koji svojim Duhom prebiva u svom narodu, a vernici su opisani kao oni „koji su nazidani na temelju apostola i proroka, gde je sam Isus Hristos ugaoni kamen; u kome se sva građevina skladno sastavlja i raste u sveti hram u Gospodu; u kome se i vi zajedno ugrađujete za prebivalište Božje u Duhu“ (Efescima 2:20–22). „Ja dakle, sužanj Gospoda,“ kaže Pavle, „molim vas da živite dostojno zvanja kojim ste pozvani, sa svakom poniznošću i krotkošću, sa dugotrpljenjem, podnoseći jedni druge u ljubavi, trudeći se da održite jedinstvo Duha u svezi mira. Jedno je telo i jedan Duh, kao što ste pozvani u jednoj nadi svoga zvanja; jedan Gospod, jedna vera, jedno krštenje, jedan Bog i Otac svih, koji je nad svima, kroz sve i u svima vama“ (Efescima 4:1–6).',
+    'Od večnih vekova bila je Božja namera da svako stvoreno biće, od svetlog i svetog serafima do čoveka, bude hram za prebivanje Stvoritelja. Zbog greha, čovečanstvo je prestalo da bude hram Božji. Pomračeno i uprljano zlom, srce čoveka više nije odražavalo slavu Božju. Ali utelovljenjem Sina Božjeg, nebeska namera se ispunjava. Bog prebiva u čovečanstvu, i kroz spasonosnu blagodat srce čoveka ponovo postaje Njegov hram.',
+    'Bog je odredio da hram u Jerusalimu bude stalni svedok uzvišene sudbine otvorene svakoj duši. Ali Jevreji nisu razumeli značaj građevine na koju su gledali sa tolikim ponosom. Oni se nisu predali kao hramovi Božjeg Duha. Dvorišta hrama u Jerusalimu, ispunjena metežom nesvete trgovine, verno su prikazivala hram srca, uprljan prisustvom čulnih strasti i nesvetih misli. Čisteći hram od kupaca i prodavaca, Isus je objavio svoju misiju da očisti srce od prljavštine greha — od zemaljskih želja, sebičnih požuda i zlih navika koje kvare dušu. „Gospod, koga tražite, iznenada će doći u svoj hram, anđeo zaveta koga vi želite; gle, dolazi, veli Gospod nad vojskama. Ko će podneti dan njegovog dolaska? i ko će opstati kad se pojavi? jer je on kao oganj topioničarski i kao sapun beliočev; i sešće kao topioničar i čistač srebra, i očistiće sinove Levijeve i pretopiće ih kao zlato i srebro“ (Malahija 3:1–3).',
+    '„Ili ne znate da ste vi hram Božji i da Duh Božji prebiva u vama? Ako ko pokvari hram Božji, pokvariće njega Bog; jer je hram Božji svet, a to ste vi“ (1. Korinćanima 3:16–17). Nijedan čovek sam ne može izbaciti zlo koje je zauzelo srce. Samo Hristos može očistiti hram duše. Ali On neće silom ući. On ne dolazi u srce kao u hram nekada; nego kaže: „Evo stojim na vratima i kucam; ako ko čuje moj glas i otvori vrata, ući ću k njemu“ (Otkrivenje 3:20). On dolazi ne samo na jedan dan; jer kaže: „Useliću se u njih, i hodiću u njima; i oni će biti moj narod“ (Levitski 26:12). Njegovo prisustvo očistiće i posvetiti dušu, tako da postane sveti hram Gospodu i „prebivalište Božje u Duhu“.',
+    'Ovom slikom Božja Reč pokazuje koliko ceni naš fizički organizam i koliku odgovornost imamo da ga sačuvamo u najboljem stanju. Naša tela su Hristova kupljena svojina, i nemamo slobodu da činimo s njima šta želimo. Čovek je postupao drugačije. Njegovim izopačenim apetitom organi i moći su oslabili, oboleli i osakaćeni. Sotona koristi ove posledice svojih lukavih iskušenja da bi vređao Boga. Predstavlja pred Bogom ljudsko telo koje je Hristos kupio kao svoju svojinu; i kakva ružna slika čoveka, stvorenog na sliku Božju! Zato što je čovek zgrešio protiv svog tela i pokvario svoje puteve, Bog se obeščašćuje.',
+    'Kada su ljudi istinski obraćeni, oni savesno poštuju zakone života koje je Bog postavio u njihovo biće, nastojeći da izbegnu telesnu, mentalnu i moralnu slabost. Poslušnost ovim zakonima mora postati lična dužnost. Mi sami snosimo posledice kršenja zakona. Odgovorni smo pred Bogom za svoje navike i postupke. Zato pitanje nije: „Šta će svet reći?“ nego: „Kako ću ja, koji se nazivam hrišćaninom, postupati prema prebivalištu koje mi je Bog dao? Hoću li raditi za svoje najveće dobro, telesno i duhovno, čuvajući telo kao hram za prebivanje Svetoga Duha, ili ću se pokoriti idejama i običajima sveta?“',
+    '„Ili ne znate da niste svoji? Jer ste kupljeni cenom“ (1. Korinćanima 6:19–20). Kakva cena je plaćena za nas! Pogledajte krst i žrtvu uzdignutu na njemu. Pogledajte ruke probodene okrutnim klinovima. Pogledajte noge prikovane za drvo. Hristos je poneo naše grehe u svom telu. Ta patnja i agonija predstavljaju cenu našeg otkupljenja. Ne znate li da nas je voleo i dao sebe za nas, da bismo mi zauzvrat dali sebe Njemu? Zašto ljubav prema Hristu ne bi bila iskazana od svih koji Ga primaju verom, isto tako stvarno kao što je Njegova ljubav pokazana prema nama za koje je umro?',
+    '„Drugog temelja niko ne može postaviti osim onoga koji je postavljen, a to je Isus Hristos“ (1. Korinćanima 3:11). „Nema drugog imena pod nebom danoga ljudima kojim bismo se mogli spasti“ (Dela apostolska 4:12). Hristos, Reč Božja, otkrivenje Njegovog karaktera, zakona, ljubavi i života, jedini je temelj na kome možemo graditi trajni karakter.',
+    'Mi gradimo na Hristu poslušnošću Njegovoj Reči. Pravedan nije onaj koji samo uživa u pravednosti, nego onaj koji čini pravednost. Svetost nije ushićenje; ona je rezultat potpunog predanja Bogu, vršenja volje nebeskog Oca. Religija se sastoji u vršenju Hristovih reči, ne da bismo zaslužili Božju naklonost, nego zato što smo primili dar Njegove ljubavi. Hristos ne zasniva spasenje samo na ispovedanju, već na veri koja se pokazuje delima pravednosti. „Koje vodi Duh Božji, oni su sinovi Božji“ (Rimljanima 8:14). Ne oni čija su srca povremeno dotaknuta Duhom, već oni koji su vođeni Duhom, jesu sinovi Božji.',
+    'Živeti po Reči Božjoj znači predati Mu ceo život. Stalno se oseća potreba i zavisnost, izvlačenje srca ka Bogu. Molitva je neophodna, jer je život duše. Porodična i javna molitva imaju svoje mesto, ali tajno zajedništvo sa Bogom održava život duše. Na gori sa Bogom, Mojsije je video uzorak divne građevine koja je trebalo da bude prebivalište Božje slave. Na gori sa Bogom — u tajnom mestu zajedništva — posmatramo Njegov slavni ideal za čovečanstvo. Tako oblikujemo karakter i gradimo hram, da se na nama ispuni Njegovo obećanje: „Useliću se u njih, i hodiću u njima; i biću njihov Bog, i oni će biti moj narod“ (Levitski 26:12).',
+  ],
+};
+
 const EDITORIAL_QUICK_TOPICS = [
   'Hristos',
   'vera',
@@ -475,6 +493,7 @@ export default function App() {
   const [pinnedSearchQueries, setPinnedSearchQueries] = useState<string[]>(() => loadPinnedSearchQueries());
   const [completedTopicPathSteps, setCompletedTopicPathSteps] = useState<string[]>(() => loadTopicPathCompletions());
   const [readerTextScale, setReaderTextScale] = useState<number>(() => loadReaderTextScale());
+  const [isDailyDevotionalOpen, setIsDailyDevotionalOpen] = useState(false);
   const [chapterScrollProgress, setChapterScrollProgress] = useState(0);
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>('all');
   const [librarySort, setLibrarySort] = useState<LibrarySort>('featured');
@@ -1551,7 +1570,7 @@ export default function App() {
           <div className="biblioteka-top-search biblioteka-card biblioteka-stagger-enter" style={{ '--stagger-delay': '40ms' } as CSSProperties}>
             <div className="biblioteka-top-search-copy">
               <div className="biblioteka-eyebrow">Pretraga biblioteke</div>
-              <h3>Pronađi knjigu odmah</h3>
+              <h3>Pretraživanje</h3>
               <p>Pretraži po naslovu, opisu, poglavljima i tematskim celinama direktno sa vrha početne strane.</p>
             </div>
 
@@ -1667,6 +1686,32 @@ export default function App() {
               ) : null}
             </div>
           </div>
+
+          <section className="biblioteka-devotional biblioteka-card biblioteka-stagger-enter" style={{ '--stagger-delay': '85ms' } as CSSProperties}>
+            <button
+              type="button"
+              className={`biblioteka-devotional-trigger ${isDailyDevotionalOpen ? 'is-open' : ''}`}
+              aria-expanded={isDailyDevotionalOpen}
+              onClick={() => setIsDailyDevotionalOpen((current) => !current)}
+            >
+              <div className="biblioteka-devotional-trigger-copy">
+                <div className="biblioteka-eyebrow">{DAILY_DEVOTIONAL.label}</div>
+                <h3>{DAILY_DEVOTIONAL.title}</h3>
+              </div>
+              <span className="biblioteka-devotional-trigger-icon" aria-hidden="true">⌄</span>
+            </button>
+
+            {isDailyDevotionalOpen ? (
+              <div className="biblioteka-devotional-body">
+                <div className="biblioteka-devotional-source">{DAILY_DEVOTIONAL.source}</div>
+                <div className="biblioteka-devotional-content">
+                  {DAILY_DEVOTIONAL.paragraphs.map((paragraph, index) => (
+                    <p key={`daily-devotional-${index}`}>{paragraph}</p>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </section>
 
           <div className={`biblioteka-library-grid ${openingBookId ? 'is-transitioning' : ''}`}>
             {filteredLibraryBooks.map((book: Book, index: number) => {
