@@ -132,6 +132,11 @@ type SearchActionResult = {
   chapterIndex: number;
 };
 
+type VisitorInsight = {
+  totalVisitors: number | null;
+  country: string | null;
+};
+
 function dedupeBooks(books: Book[]) {
   const seen = new Set<string>();
   return books.filter((book) => {
@@ -494,6 +499,7 @@ export default function App() {
   const [completedTopicPathSteps, setCompletedTopicPathSteps] = useState<string[]>(() => loadTopicPathCompletions());
   const [readerTextScale, setReaderTextScale] = useState<number>(() => loadReaderTextScale());
   const [isDailyDevotionalOpen, setIsDailyDevotionalOpen] = useState(false);
+  const [visitorInsight, setVisitorInsight] = useState<VisitorInsight>({ totalVisitors: null, country: null });
   const [chapterScrollProgress, setChapterScrollProgress] = useState(0);
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>('all');
   const [librarySort, setLibrarySort] = useState<LibrarySort>('featured');
@@ -1018,6 +1024,10 @@ export default function App() {
   const isReaderTextScaleMin = readerTextScale <= 0.88;
   const isReaderTextScaleMax = readerTextScale >= 1.28;
   const readerTextScalePercent = `${Math.round(readerTextScale * 100)}%`;
+  const formattedVisitorTotal = useMemo(
+    () => (visitorInsight.totalVisitors !== null ? new Intl.NumberFormat('sr-RS').format(visitorInsight.totalVisitors) : null),
+    [visitorInsight.totalVisitors],
+  );
   const contentCardStyle = {
     '--book-accent': featuredBook.accent,
     '--reader-content-font-scale': readerTextScale,
@@ -1216,6 +1226,63 @@ export default function App() {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(READER_TEXT_SCALE_KEY, String(readerTextScale));
   }, [readerTextScale]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const { hostname } = window.location;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') return;
+
+    const controller = new AbortController();
+    const baseUrl = String(import.meta.env.BASE_URL || '/');
+    const normalizedKey = `${hostname}${baseUrl}`
+      .replace(/[^a-zA-Z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .toLowerCase();
+    const today = new Date().toISOString().slice(0, 10);
+    const storageKey = `egv-visitor-tracked-${normalizedKey}`;
+    const alreadyTrackedToday = window.localStorage.getItem(storageKey) === today;
+    const countUrl = alreadyTrackedToday
+      ? `https://api.countapi.xyz/get/egv-biblioteka/${normalizedKey}`
+      : `https://api.countapi.xyz/hit/egv-biblioteka/${normalizedKey}`;
+
+    Promise.allSettled([
+      fetch(countUrl, { signal: controller.signal }).then((response) => response.json() as Promise<{ value?: number }>),
+      fetch('https://ipapi.co/json/', { signal: controller.signal }).then(
+        (response) => response.json() as Promise<{ country_name?: string; country?: string }>,
+      ),
+    ])
+      .then((results) => {
+        if (controller.signal.aborted) return;
+
+        const nextInsight: VisitorInsight = {
+          totalVisitors: null,
+          country: null,
+        };
+
+        const [countResult, locationResult] = results;
+
+        if (countResult.status === 'fulfilled' && typeof countResult.value?.value === 'number') {
+          nextInsight.totalVisitors = countResult.value.value;
+          if (!alreadyTrackedToday) {
+            window.localStorage.setItem(storageKey, today);
+          }
+        }
+
+        if (locationResult.status === 'fulfilled') {
+          nextInsight.country = locationResult.value.country_name ?? locationResult.value.country ?? null;
+        }
+
+        setVisitorInsight(nextInsight);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setVisitorInsight({ totalVisitors: null, country: null });
+        }
+      });
+
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     if (!isLibraryHome) return;
@@ -2558,7 +2625,15 @@ export default function App() {
       ) : null}
 
       <footer className="biblioteka-footer">
-        <div className="biblioteka-footer-inner">Autorska prava © EGV Biblioteka. Sva prava su zadržana.</div>
+        <div className="biblioteka-footer-inner">
+          <div className="biblioteka-footer-copy">Autorska prava © EGV Biblioteka. Sva prava su zadržana.</div>
+          {formattedVisitorTotal || visitorInsight.country ? (
+            <div className="biblioteka-footer-meta" aria-label="Uvid u posete aplikaciji">
+              {formattedVisitorTotal ? <span>Posetioci: {formattedVisitorTotal}</span> : null}
+              {visitorInsight.country ? <span>Trenutna poseta iz: {visitorInsight.country}</span> : null}
+            </div>
+          ) : null}
+        </div>
       </footer>
     </div>
   );
