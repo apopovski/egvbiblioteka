@@ -125,7 +125,11 @@ export async function loadLibrarySearchIndex(language: LanguageCode): Promise<Li
 
 export function buildAppPath(language: LanguageCode, bookId?: string, chapterId?: string) {
   const langSegment = LANGUAGE_ROUTE_SEGMENTS[language] || LANGUAGE_ROUTE_SEGMENTS.sr;
-  const segments = ['', langSegment];
+  const segments = [''];
+
+  if (language !== 'sr') {
+    segments.push(langSegment);
+  }
 
   if (bookId) {
     segments.push(bookId);
@@ -143,9 +147,10 @@ export function getInitialRouteState(): RouteState {
   }
 
   const parts = window.location.pathname.split('/').filter(Boolean);
-  const [langSegment, bookSegment, chapterSegment] = parts;
+  const matchedLanguage = Object.entries(LANGUAGE_ROUTE_SEGMENTS).find(([, segment]) => segment === parts[0]);
+  const language = (matchedLanguage?.[0] as LanguageCode | undefined) || 'sr';
+  const [bookSegment, chapterSegment] = matchedLanguage ? parts.slice(1) : parts;
 
-  const language = (Object.entries(LANGUAGE_ROUTE_SEGMENTS).find(([, segment]) => segment === langSegment)?.[0] as LanguageCode | undefined) || 'sr';
   if (!bookSegment) {
     return {
       language,
