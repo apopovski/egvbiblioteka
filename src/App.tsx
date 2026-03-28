@@ -134,7 +134,9 @@ type SearchActionResult = {
 
 type VisitorInsight = {
   totalVisitors: number | null;
-  country: string | null;
+  countryCode: string | null;
+  countryNameSr: string | null;
+  countryVisitors: number | null;
 };
 
 function dedupeBooks(books: Book[]) {
@@ -499,7 +501,13 @@ export default function App() {
   const [completedTopicPathSteps, setCompletedTopicPathSteps] = useState<string[]>(() => loadTopicPathCompletions());
   const [readerTextScale, setReaderTextScale] = useState<number>(() => loadReaderTextScale());
   const [isDailyDevotionalOpen, setIsDailyDevotionalOpen] = useState(false);
-  const [visitorInsight, setVisitorInsight] = useState<VisitorInsight>({ totalVisitors: null, country: null });
+  const [visitorInsight, setVisitorInsight] = useState<VisitorInsight>({
+    totalVisitors: null,
+    countryCode: null,
+    countryNameSr: null,
+    countryVisitors: null,
+  });
+  const [isVisitorWidgetOpen, setIsVisitorWidgetOpen] = useState(false);
   const [chapterScrollProgress, setChapterScrollProgress] = useState(0);
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>('all');
   const [librarySort, setLibrarySort] = useState<LibrarySort>('featured');
@@ -1028,6 +1036,10 @@ export default function App() {
     () => (visitorInsight.totalVisitors !== null ? new Intl.NumberFormat('sr-RS').format(visitorInsight.totalVisitors) : null),
     [visitorInsight.totalVisitors],
   );
+  const formattedCountryVisitors = useMemo(
+    () => (visitorInsight.countryVisitors !== null ? new Intl.NumberFormat('sr-RS').format(visitorInsight.countryVisitors) : null),
+    [visitorInsight.countryVisitors],
+  );
   const contentCardStyle = {
     '--book-accent': featuredBook.accent,
     '--reader-content-font-scale': readerTextScale,
@@ -1240,46 +1252,69 @@ export default function App() {
       .replace(/^-+|-+$/g, '')
       .toLowerCase();
     const today = new Date().toISOString().slice(0, 10);
-    const storageKey = `egv-visitor-tracked-${normalizedKey}`;
-    const alreadyTrackedToday = window.localStorage.getItem(storageKey) === today;
-    const countUrl = alreadyTrackedToday
-      ? `https://api.countapi.xyz/get/egv-biblioteka/${normalizedKey}`
-      : `https://api.countapi.xyz/hit/egv-biblioteka/${normalizedKey}`;
+    const totalStorageKey = `egv-visitor-tracked-ukupno-${normalizedKey}`;
+    const totalAlreadyTrackedToday = window.localStorage.getItem(totalStorageKey) === today;
 
-    Promise.allSettled([
-      fetch(countUrl, { signal: controller.signal }).then((response) => response.json() as Promise<{ value?: number }>),
-      fetch('https://ipapi.co/json/', { signal: controller.signal }).then(
-        (response) => response.json() as Promise<{ country_name?: string; country?: string }>,
-      ),
-    ])
-      .then((results) => {
-        if (controller.signal.aborted) return;
+    const resolveCounterValue = async (scope: string, key: string, alreadyTrackedToday: boolean) => {
+      const endpoint = alreadyTrackedToday ? 'get' : 'hit';
+      const response = await fetch(`https://api.countapi.xyz/${endpoint}/${scope}/${key}`, { signal: controller.signal });
+      const payload = await response.json() as { value?: number };
+      return typeof payload.value === 'number' ? payload.value : null;
+    };
 
-        const nextInsight: VisitorInsight = {
-          totalVisitors: null,
-          country: null,
-        };
+    const loadVisitorInsight = async () => {
+      const nextInsight: VisitorInsight = {
+        totalVisitors: null,
+        countryCode: null,
+        countryNameSr: null,
+        countryVisitors: null,
+      };
 
-        const [countResult, locationResult] = results;
+      try {
+        const location = await fetch('https://ipapi.co/json/', { signal: controller.signal })
+          .then((response) => response.json() as Promise<{ country?: string }>);
 
-        if (countResult.status === 'fulfilled' && typeof countResult.value?.value === 'number') {
-          nextInsight.totalVisitors = countResult.value.value;
-          if (!alreadyTrackedToday) {
-            window.localStorage.setItem(storageKey, today);
+        const countryCode = String(location.country || '').trim().toUpperCase();
+        if (countryCode) {
+          const displayNames = new Intl.DisplayNames(['sr'], { type: 'region' });
+          nextInsight.countryCode = countryCode;
+          nextInsight.countryNameSr = displayNames.of(countryCode) ?? countryCode;
+        }
+      } catch {
+        // ignored intentionally
+      }
+
+      try {
+        const totalKey = `${normalizedKey}-ukupno`;
+        nextInsight.totalVisitors = await resolveCounterValue('egv-biblioteka', totalKey, totalAlreadyTrackedToday);
+        if (nextInsight.totalVisitors !== null && !totalAlreadyTrackedToday) {
+          window.localStorage.setItem(totalStorageKey, today);
+        }
+      } catch {
+        // ignored intentionally
+      }
+
+      if (nextInsight.countryCode) {
+        try {
+          const countryStorageKey = `egv-visitor-tracked-drzava-${normalizedKey}-${nextInsight.countryCode}`;
+          const countryAlreadyTrackedToday = window.localStorage.getItem(countryStorageKey) === today;
+          const countryKey = `${normalizedKey}-drzava-${nextInsight.countryCode.toLowerCase()}`;
+          nextInsight.countryVisitors = await resolveCounterValue('egv-biblioteka', countryKey, countryAlreadyTrackedToday);
+
+          if (nextInsight.countryVisitors !== null && !countryAlreadyTrackedToday) {
+            window.localStorage.setItem(countryStorageKey, today);
           }
+        } catch {
+          // ignored intentionally
         }
+      }
 
-        if (locationResult.status === 'fulfilled') {
-          nextInsight.country = locationResult.value.country_name ?? locationResult.value.country ?? null;
-        }
-
+      if (!controller.signal.aborted) {
         setVisitorInsight(nextInsight);
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setVisitorInsight({ totalVisitors: null, country: null });
-        }
-      });
+      }
+    };
+
+    loadVisitorInsight();
 
     return () => controller.abort();
   }, []);
@@ -2627,10 +2662,27 @@ export default function App() {
       <footer className="biblioteka-footer">
         <div className="biblioteka-footer-inner">
           <div className="biblioteka-footer-copy">Autorska prava © EGV Biblioteka. Sva prava su zadržana.</div>
-          {formattedVisitorTotal || visitorInsight.country ? (
-            <div className="biblioteka-footer-meta" aria-label="Uvid u posete aplikaciji">
-              {formattedVisitorTotal ? <span>Posetioci: {formattedVisitorTotal}</span> : null}
-              {visitorInsight.country ? <span>Trenutna poseta iz: {visitorInsight.country}</span> : null}
+          {formattedVisitorTotal || formattedCountryVisitors || visitorInsight.countryNameSr ? (
+            <div className="biblioteka-footer-analytics" aria-label="Statistika poseta">
+              <button
+                type="button"
+                className="biblioteka-footer-analytics-toggle"
+                onClick={() => setIsVisitorWidgetOpen((current) => !current)}
+                aria-expanded={isVisitorWidgetOpen}
+              >
+                <span className="biblioteka-footer-analytics-plus">+</span>
+                <span>Statistika poseta</span>
+              </button>
+
+              {isVisitorWidgetOpen ? (
+                <div className="biblioteka-footer-meta" aria-label="Detalji statistike poseta">
+                  {formattedVisitorTotal ? <span>Ukupno poseta: {formattedVisitorTotal}</span> : null}
+                  {visitorInsight.countryNameSr ? <span>Država posetioca: {visitorInsight.countryNameSr}</span> : null}
+                  {visitorInsight.countryNameSr && formattedCountryVisitors ? (
+                    <span>Poseta iz države {visitorInsight.countryNameSr}: {formattedCountryVisitors}</span>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>
