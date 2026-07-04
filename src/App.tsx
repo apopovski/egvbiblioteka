@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSProperties, type KeyboardEvent, type MouseEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSProperties, type FormEvent, type KeyboardEvent, type MouseEvent } from 'react';
 import { MdArrowBack, MdDarkMode, MdLightMode, MdMenuBook, MdOutlinePushPin, MdOutlineStar, MdPushPin, MdSearch, MdStar } from 'react-icons/md';
 import './App.css';
 import './BookReader.css';
@@ -157,6 +157,9 @@ const PINNED_SEARCH_QUERIES_KEY = 'egv-pinned-search-queries';
 const TOPIC_PATH_COMPLETIONS_KEY = 'egv-topic-path-completions';
 const READER_TEXT_SCALE_KEY = 'egv-reader-text-scale';
 const LOCKED_LANGUAGE: LanguageCode = 'sr';
+const QA_SUBMISSION_WEBHOOK_URL = String(import.meta.env.VITE_QA_SUBMISSION_WEBHOOK_URL ?? '').trim();
+const QA_RECEIVER_EMAIL = String(import.meta.env.VITE_QA_RECEIVER_EMAIL ?? '').trim();
+const QA_SUBMISSION_MODE = String(import.meta.env.VITE_QA_SUBMISSION_MODE ?? 'cors').trim().toLowerCase();
 
 const LIBRARY_FILTERS: Array<{ id: LibraryFilter; label: string }> = [
   { id: 'all', label: 'Sve knjige' },
@@ -201,7 +204,7 @@ const CURATED_COLLECTIONS: CuratedCollection[] = [
 const DAILY_DEVOTIONAL = {
   label: 'Dnevno razmišljanje',
   title: 'Prebivalište za Duha',
-  source: 'Revju i Herald (Review and Herald), 31. decembar 1908',
+  source: 'Revju i Herald, 31. decembar 1908',
   paragraphs: [
     'Hristos je predstavljen kao Onaj koji svojim Duhom prebiva u svom narodu, a vernici su opisani kao oni „koji su nazidani na temelju apostola i proroka, gde je sam Isus Hristos ugaoni kamen; u kome se sva građevina skladno sastavlja i raste u sveti hram u Gospodu; u kome se i vi zajedno ugrađujete za prebivalište Božje u Duhu“ (Efescima 2:20–22). „Ja dakle, sužanj Gospoda,“ kaže Pavle, „molim vas da živite dostojno zvanja kojim ste pozvani, sa svakom poniznošću i krotkošću, sa dugotrpljenjem, podnoseći jedni druge u ljubavi, trudeći se da održite jedinstvo Duha u svezi mira. Jedno je telo i jedan Duh, kao što ste pozvani u jednoj nadi svoga zvanja; jedan Gospod, jedna vera, jedno krštenje, jedan Bog i Otac svih, koji je nad svima, kroz sve i u svima vama“ (Efescima 4:1–6).',
     'Od večnih vekova bila je Božja namera da svako stvoreno biće, od svetlog i svetog serafima do čoveka, bude hram za prebivanje Stvoritelja. Zbog greha, čovečanstvo je prestalo da bude hram Božji. Pomračeno i uprljano zlom, srce čoveka više nije odražavalo slavu Božju. Ali utelovljenjem Sina Božjeg, nebeska namera se ispunjava. Bog prebiva u čovečanstvu, i kroz spasonosnu blagodat srce čoveka ponovo postaje Njegov hram.',
@@ -213,6 +216,47 @@ const DAILY_DEVOTIONAL = {
     '„Drugog temelja niko ne može postaviti osim onoga koji je postavljen, a to je Isus Hristos“ (1. Korinćanima 3:11). „Nema drugog imena pod nebom danoga ljudima kojim bismo se mogli spasti“ (Dela apostolska 4:12). Hristos, Reč Božja, otkrivenje Njegovog karaktera, zakona, ljubavi i života, jedini je temelj na kome možemo graditi trajni karakter.',
     'Mi gradimo na Hristu poslušnošću Njegovoj Reči. Pravedan nije onaj koji samo uživa u pravednosti, nego onaj koji čini pravednost. Svetost nije ushićenje; ona je rezultat potpunog predanja Bogu, vršenja volje nebeskog Oca. Religija se sastoji u vršenju Hristovih reči, ne da bismo zaslužili Božju naklonost, nego zato što smo primili dar Njegove ljubavi. Hristos ne zasniva spasenje samo na ispovedanju, već na veri koja se pokazuje delima pravednosti. „Koje vodi Duh Božji, oni su sinovi Božji“ (Rimljanima 8:14). Ne oni čija su srca povremeno dotaknuta Duhom, već oni koji su vođeni Duhom, jesu sinovi Božji.',
     'Živeti po Reči Božjoj znači predati Mu ceo život. Stalno se oseća potreba i zavisnost, izvlačenje srca ka Bogu. Molitva je neophodna, jer je život duše. Porodična i javna molitva imaju svoje mesto, ali tajno zajedništvo sa Bogom održava život duše. Na gori sa Bogom, Mojsije je video uzorak divne građevine koja je trebalo da bude prebivalište Božje slave. Na gori sa Bogom — u tajnom mestu zajedništva — posmatramo Njegov slavni ideal za čovečanstvo. Tako oblikujemo karakter i gradimo hram, da se na nama ispuni Njegovo obećanje: „Useliću se u njih, i hodiću u njima; i biću njihov Bog, i oni će biti moj narod“ (Levitski 26:12).',
+  ],
+};
+
+const SECOND_COMING_QA = {
+  label: 'Pitanje i odgovor',
+  question: 'Zbog čega Isus još uvek nije došao?',
+  paragraphs: [
+    'Duga noć mraka je iskušavajuća, ali jutro je odloženo u milosti, jer ako bi Gospodar došao, mnogi bi bili nespremni. — Svedočanstva za Crkvu 2:194 (1868).',
+    'Da su adventisti nakon velikog razočaranja 1844. godine čvrsto držali svoju veru i ujedinjeno sledili Božju promisao, primajući poruku trećeg anđela i u sili Svetog Duha objavljujući je svetu, videli bi Božje spasenje, Gospod bi moćno delovao njihovim naporima, delo bi bilo završeno i Hristos bi došao ovde da primi svoj narod po njihovu nagradu... Nije bila Božja volja da se Hristov dolazak tako odloži... Četrdeset godina neverovanje, mrmljanje i pobuna su isključivali drevni Izrael iz zemlje Hanan. Isti gresi su odložili ulazak modernog Izraela u nebeski Hanan. Ni u jednom slučaju nisu bila Božja obećanja kriva. Neverovanje, svetovnost, neposvećenost i sukobi među onima koji se tako izjašnjavaju kao Gospodnji narod su ono što nas drži u ovom svetu greha i tuge toliko godina. — Evangelizam, 695, 696 (1883).',
+    'Anđeli Božji u svojim porukama ljudima predstavljaju vreme kao veoma kratko. [Vidi Rimljanima 13:11, 12; 1. Korinćanima 7:29; 1. Solunjanima 4:15, 17; Jevrejima 10:25; Jakovljeva 5:8, 9; 1. Petrova 4:7; Otkrivenje 22:6, 7.] Tako mi je uvek bilo predstavljeno. Istina je da je vreme trajalo duže nego što smo očekivali u ranim danima ove poruke. Naš Spasitelj se nije pojavio čim smo se nadali. Ali da li je Reč Gospodnja izneverila? Nikada! Treba zapamtiti da su i Božja obećanja i pretnje podjednako uslovni. [Vidi Jeremiju 18:7-10; Jona 3:4-10.]... Događaji poslednjih dana, 38.2',
+    'Možda ćemo morati da ostanemo ovde na ovom svetu zbog neposlušnosti još mnogo godina, kao što su to činili deca Izrailjeva, ali zbog Hrista Njegov narod ne bi trebalo da dodaje greh grehu optužujući Boga za posledice sopstvenog pogrešnog postupka. — Evangelizam, 695, 696 (1901).',
+    'Da je Hristova crkva izvršila svoj zadatak kako je Gospod odredio, ceo svet bi pre toga bio upozoren i Gospod Isus bi došao na našu zemlju u sili i velikoj slavi. — Čežnja vekova, 633, 634 (1898).',
+    'Hristos sa željom čeka da se manifestuje u svojoj crkvi. Kada se Hristov karakter savršeno reprodukuje u Njegovom narodu, tada će doći da ih zatraži kao svoje. Događaji poslednjih dana, 39.2',
+    'Privilegija je svakog hrišćanina ne samo da očekuje, već i da ubrza dolazak našeg Gospoda Isusa Hrista. Kada bi svi koji ispovedaju Njegovo ime donosili plodove na Njegovu slavu, koliko bi brzo ceo svet bio posejan semenom jevanđelja. Brzo bi sazrela poslednja velika žetva i Hristos bi došao da sakupi dragoceno zrno. — Hristove predmetne lekcije, 69 (1900). Događaji poslednjih dana, 39.3',
+    'On nam je dao moć, kroz saradnju sa Njim, da okončamo ovu scenu bede. — Obrazovanje, 264 (1903). Događaji poslednjih dana, 39.5',
+    'Sa nepogrešivom tačnošću, Beskonačni i dalje vodi račune sa svim narodima. Dok se Njegova milost pokazuje pozivima na pokajanje, ovaj račun će ostati otvoren, ali kada brojke dostignu određeni iznos, koji je Bog odredio, počinje služba Njegovog gneva. — Svedočanstva za Crkvu 5:208 (1882). Događaji poslednjih dana, 39.6',
+    'Dolazi vreme kada će ljudi u svojoj prevari i drskosti dostići tačku koju im Gospod neće dozvoliti da pređu i naučiće da postoji granica Jehovine strpljivosti. — Svedočanstva za Crkvu 9:13 (1909). Događaji poslednjih dana, 40.4',
+    'Bog vodi evidenciju sa narodima. Brojke se povećavaju protiv njih u nebeskim knjigama, i kada postane zakon da se prestup prvog dana u nedelji susreće sa kaznom, tada će njihova čaša biti puna. — Biblijski komentar ASD 7:910 (1886). Događaji poslednjih dana, 40.1',
+  ],
+};
+
+const PERFECTION_QA = {
+  label: 'Pitanje i odgovor',
+  question: 'Da li je moguće i kako dostići savršenstvo?',
+  paragraphs: [
+    'Hristovom žrtvom obezbeđeno je sve što je potrebno da bi vernici primili sve što se odnosi na život i pobožnost. Bog nas poziva da dostignemo najviši standard slave i vrline. Savršenstvo Hristovog karaktera omogućava nam da postignemo savršenstvo. Poziv na medicinsku evangelizaciju i zdravstveno obrazovanje, str. 46',
+    'Hristova je želja da Njegova deca stignu do ovog mesta. On čezne da kroz njih otkrije riznice Svoje blagodati. On im kaže: „Budite vi dakle savršeni, kao što je savršen Otac vaš nebeski.“ A On to govori jer zna da je za njih moguće da dostignu savršenstvo. On je u ovom svetu živeo životom koji oni moraju da žive. On se sam suočio sa neprijateljem, kao što se i oni moraju suočiti s njim. Tražio je i primio silu koja će Mu omogućiti da pobedi u sukobu. A oni koji hode Božjim putem mogu imati istu tu silu. Isti anđeli koji su služili Hristu služe i onima koji će biti naslednici spasenja. Kao što je On pobedio, tako i mi možemo pobediti. „Zato je u svemu morao biti sličan braći, da bi bio milosrdan i veran prvosveštenik u onome što se odnosi na Boga, kako bi izvršio pomirenje za grehe svog naroda. Jer pošto je i sam stradao budući kušan, On može pomoći onima koji su kušani.“ Znaci vremena, 8. januar 1902, pasus 11',
+    'Pobeđivanje znači mnogo više nego što shvatamo. To znači odupreti se neprijatelju i približiti se Bogu. To znači uzeti krst i slediti Hrista, radosno čineći one stvari koje su u suprotnosti sa prirodnim sklonostima. Hristos je došao sa neba da nam pokaže kako da živimo životom samoodricanja. U Njegovoj snazi treba da dostignemo savršenstvo. On nam je to omogućio, i kada dođe po drugi put, pitaće nas zašto nismo ispunili Njegovu nameru za nas. Iz dana u dan, iz sata u sat, pripremamo se za sud, odlučujući o svojoj večnoj sudbini. Mi upravljamo dobrima našeg Gospoda. Kada dođe, svešće račune sa nama, da vidi kako smo uvećali Njegova dobra. Tražiće se rezultati srazmerni poverenim talentima, a svakom vernom, požrtvovanom hrišćaninu biće data nagrada srazmerna njegovom delu. Ništa što je učinjeno sa iskrenošću nije uzalud. Sve se tačno meri na zlatnim vagama svetinje. Znaci vremena, 17. jul 1901, pasus 5',
+    'Sveto pismo nas uči da težimo posvećenju Bogu – tela, duše i duha. U ovom delu treba da budemo Božji saradnici. Mnogo se može učiniti da bi se obnovilo Božje moralno obličje u čoveku, da bi se unapredile fizičke, umne i moralne sposobnosti. Velike promene se mogu ostvariti u fizičkom organizmu poštovanjem Božjih zakona i neunošenjem u telo ničega što ga skrnavi. I dok ne možemo tvrditi da posedujemo savršenstvo tela, možemo imati hrišćansko savršenstvo duše. Kroz žrtvu prinesenu za nas, gresi mogu biti savršeno oprošteni. Naš oslonac nije u onome što čovek može učiniti; već u onome što Bog kroz Hrista može učiniti za čoveka. Kada se u potpunosti predamo Bogu i potpuno verujemo, Hristova krv čisti od svakog greha. Savest može biti oslobođena osude. Kroz veru u Njegovu krv, svi mogu postati savršeni u Hristu Isusu. Hvala Bogu što se ne suočavamo sa nemogućim. Možemo tražiti posvećenje. Možemo uživati u Božjoj naklonosti. Ne treba da budemo zabrinuti oko toga šta Hrist i Bog misle o nama, već šta Bog misli o Hristu, našoj Zameni. Vi ste prihvaćeni u Ljubljenome. Gospod pokazuje onome koji se kaje i veruje da Hrist prihvata predaju duše, kako bi bila oblikovana i stvorena po Njegovom sopstvenom liku. Odabrane poruke, knjiga 2, str. 32',
+    'Gospod je u mudrosti naumio da dovede svoj narod u položaj u kom će u duhu i praksi biti odvojen od sveta, kako njihova deca ne bi tako lako bila navedena na idolopoklonstvo i ukaljana preovlađujućom pokvarenošću ovog doba. Božja je namera da roditelji vernici i njihova deca istupe kao živi Hristovi predstavnici, kandidati za večni život. Svi koji imaju udela u božanskoj prirodi izbeći će pokvarenost koja je u svetu zbog požude. Nemoguće je da oni koji ugađaju apetitu dostignu hrišćansko savršenstvo.—Svedočanstva za crkvu 2:399, 400, 1870',
+    'Hristos je rekao: „Istražujte Pisma; jer vi mislite da u njima imate večni život, a ona svedoče o meni.” Niko ne može da zanemari Božju reč, a da ipak dostigne hrišćansko savršenstvo. Ali pažljivim istraživanjem te reči, mi se upoznajemo sa božanskim Uzorom; a da bismo oponašali taj Obrazac, on se mora često i pažljivo posmatrati. Znaci vremena, 10. jun 1886, pasus 1',
+    'Ovo je volja Božija za vas, vaše posvećenje.” Velike mogućnosti, visoka i sveta dostignuća, nadohvat su nam ruke. Posvećenje znači savršenu ljubav, savršenu poslušnost, potpunu usklađenost sa Božijom voljom. To znači bezrezervno predanje Njemu. To znači biti čist i nesebičan, bez mrlje ili mane. Znaci vremena, 28. maj 1902, pasus 1',
+    'Ovo iskustvo svako ljudsko biće može i mora imati da bi otkrilo Hrista. Na veliki dan suda, nijedan čovek koji je zadržao slabost i nesavršenost ljudske prirode neće biti opravdan; jer on ne bi mogao da uživa u savršenstvu karaktera svetih u svetlosti. Onaj ko nema dovoljno vere u Hrista da veruje da ga On može sačuvati od greha, nema ni onu veru koja će mu omogućiti ulazak u Carstvo Božje. Pisma i rukopisi — tom 12 (1897) str. 1',
+    'Bog će prihvatiti samo one koji su odlučni da streme visoko. On svakom ljudskom biću stavlja u obavezu da učini najbolje što može. Od svih se zahteva moralno savršenstvo. Nikada ne bismo smeli snižavati merilo pravednosti kako bismo udovoljili nasleđenim ili stečenim sklonostima ka činjenju zla. Moramo razumeti da je nesavršenstvo karaktera greh. Sve pravedne osobine karaktera prebivaju u Bogu kao savršena, skladna celina, i svako ko primi Hrista kao ličnog Spasitelja ima privilegiju da poseduje te osobine. Hristove očigledne lekcije, str. 330',
+    'Bog zahteva moralno savršenstvo od svih. Oni kojima su dati svetlost i prilike trebalo bi, kao Božji upravitelji, da teže savršenstvu, i nikada, baš nikada ne snižavaju merilo pravednosti kako bi udovoljili nasleđenim i stečenim sklonostima ka zlu. Hristos je preuzeo na sebe našu ljudsku prirodu i živeo našim životom, da bi nam pokazao da možemo biti kao On postajući učesnici božanske prirode. Mi možemo biti sveti, kao što je Hristos bio svet u ljudskoj prirodi. Zašto onda u svetu ima toliko neprijatnih karaktera? To je zato što ne pomišljaju da su njihovo neprijatno ponašanje i grub, nepristojan govor posledica nesvetog srca. Mi treba da budemo sveti kao što je Bog svet; i kada shvatimo puno značenje ove izjave, i usmerimo svoje srce da činimo Božje delo, da budemo sveti kao što je On svet, približićemo se standardu postavljenom za svakog pojedinca u Hristu Isusu. Pisma i rukopisi — Tom 14 (1899) str. 1',
+    'Kada se dostigne savršenstvo karaktera — Da li se trudimo svim od Boga datim moćima da dostignemo meru rasta muškaraca i žena u Hristu? Da li tražimo Njegovu punoću, neprestano sežući sve više i više, pokušavajući da dostignemo savršenstvo Njegovog karaktera? Kada Božje sluge dostignu ovu tačku, biće zapečaćeni na svojim čelima. Anđeo zapisničar će objaviti: „Svršeno je." Oni će biti potpuni u Njemu kome pripadaju po stvaranju i po otkupljenju. Rukopis 148, 1899',
+    'Nemojte biti zavedeni zabludom zlih. Glas kušača čuće se sa svih strana, govoreći vam da se od vas sada ne traži da držite Božji zakon. To je Sotonina prevara. Bog ima zakon i ljudi ga moraju držati. Ako zanemare ova pravila, neće imati ono savršenstvo karaktera koje će im omogućiti ulazak u nebeske stanove. Niko ne mora da pogreši u pogledu karaktera koji se traži da bi se postalo članom carske porodice, detetom nebeskog Cara; jer je Bog napisao ovih deset svetih pravila na kamenim pločama i čuvao ih u kovčegu napravljenom za njih, zvanom kovčeg Božjeg svedočanstva. Poklopac ovog kovčega od čistog zlata zvao se pomirilište, da bi označio da je, iako je smrt bila kazna za prestup zakona, milost došla kroz Isusa Hrista da oprosti pokajanom grešniku koji veruje. Instruktor omladine, 18. avgust 1886, pasus 3',
+    'Savršenstvo karaktera se ne može postići kada se zanemaruju zakoni prirode; jer je to prestup Božjeg zakona. Njegov zakon je napisan Njegovim sopstvenim prstom na svakom nervu, svakom mišiću, svakom vlaknu našeg bića, na svakoj sposobnosti koja je poverena čoveku. Ovi darovi su podareni, ne da bi bili zloupotrebljeni i iskvareni, već da bi se koristili na Njegovu čast i slavu u uzdizanju čovečanstva. Revju i Herald, 12. novembar 1901, pasus 4',
+    '„Dolazi knez ovoga sveta", rekao je Isus, „i u meni nema ništa." Jovan 14:30. U Njemu nije bilo ničega što bi odgovorilo na Sotonino lukavstvo. On nije pristao na greh. Ni u mislima nije popustio pred iskušenjem. Tako može biti i sa nama. Hristova ljudska priroda bila je sjedinjena sa božanskom; On je bio osposobljen za borbu prebivanjem Svetog Duha. A došao je da nas učini učesnicima u božanskoj prirodi. Sve dok smo sjedinjeni sa Njim verom, greh više nema vlasti nad nama. Bog poseže za rukom vere u nama da bi je usmerio da se čvrsto uhvati za Hristovo božanstvo, kako bismo mogli dostići savršenstvo karaktera. Čežnja vekova, str. 123',
+    'Nikakva nesličnost sa Hristom neće biti dozvoljena u svetom gradu. Proces dostizanja savršenstva karaktera treba da se odvija u ovom životu, kako bismo bili spremni za budući besmrtni život. Božja je namera da Njegova crkva na zemlji dostigne savršenstvo. Od ključne je važnosti da se Njegova uputstva strogo poštuju. Članovi treba da pomažu i snaže jedni druge. Nikakvo samouzdizanje, optuživanje ili grubost ne smeju biti prisutni u našem međusobnom ophođenju. Moramo očistiti svoje duše kroz ljubav i poslušnost istini. Moramo se jedni prema drugima ponašati kao sveti, pripremajući se, uvežbavajući se, da bismo bili bez mane u karakteru, bez mrlje ili bore ili bilo čega sličnog. Pisma i rukopisi — Tom 20 (1905) str. 1',
+    'Poruka trećeg anđela je nepogrešiva [Napomena: ovo se posebno odnosi na deo vesti u Otk. 14:12.] Njena svrha je da ujedini narod za obavljanje posebnog dela, pripremajući ih savršenstvom karaktera da se ujedine u jednu veliku porodicu u stanovima koje je Hristos otišao da pripremi za one koji Ga vole. I svi radnici su Božji poslenici čiji je zadatak da iznesu nepogrešivu istinu, da obave delo sjedinjavanja srca u jedno. … Izdanje rukopisa, knj. 15 [br. 1136–1185] str. 362',
   ],
 };
 
@@ -501,6 +545,13 @@ export default function App() {
   const [completedTopicPathSteps, setCompletedTopicPathSteps] = useState<string[]>(() => loadTopicPathCompletions());
   const [readerTextScale, setReaderTextScale] = useState<number>(() => loadReaderTextScale());
   const [isDailyDevotionalOpen, setIsDailyDevotionalOpen] = useState(false);
+  const [isSecondComingQaOpen, setIsSecondComingQaOpen] = useState(false);
+  const [isPerfectionQaOpen, setIsPerfectionQaOpen] = useState(false);
+  const [qaQuestionInput, setQaQuestionInput] = useState('');
+  const [qaNameInput, setQaNameInput] = useState('');
+  const [qaEmailInput, setQaEmailInput] = useState('');
+  const [qaSubmitStatus, setQaSubmitStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [qaSubmitFeedback, setQaSubmitFeedback] = useState<string | null>(null);
   const [visitorInsight, setVisitorInsight] = useState<VisitorInsight>({
     totalVisitors: null,
     countryCode: null,
@@ -512,12 +563,19 @@ export default function App() {
   const [libraryFilter, setLibraryFilter] = useState<LibraryFilter>('all');
   const [librarySort, setLibrarySort] = useState<LibrarySort>('featured');
   const [activeSearchResultId, setActiveSearchResultId] = useState<string | null>(null);
+  const [isQaSectionHighlighted, setIsQaSectionHighlighted] = useState(false);
+  const [libraryHomeTab, setLibraryHomeTab] = useState<'library' | 'qa'>(() => (
+    typeof window !== 'undefined' && window.location.hash === '#pitanja-i-odgovori' ? 'qa' : 'library'
+  ));
   const openBookTimerRef = useRef<number | null>(null);
+  const qaHighlightTimerRef = useRef<number | null>(null);
   const restoreLibraryScrollRef = useRef(false);
   const searchResultRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const contentCardRef = useRef<HTMLDivElement | null>(null);
+  const qaSectionRef = useRef<HTMLElement | null>(null);
 
   const isLibraryHome = !selectedBookId;
+  const canReceiveQuestions = Boolean(QA_SUBMISSION_WEBHOOK_URL || QA_RECEIVER_EMAIL);
   const activeBook = selectedBookId ? LIBRARY.find((book) => book.id === selectedBookId) ?? LIBRARY[0] : null;
   const featuredBook = activeBook ?? LIBRARY[0];
   const translation = useMemo(() => getTranslation(activeBook ?? featuredBook, language), [activeBook, featuredBook, language]);
@@ -1493,6 +1551,143 @@ export default function App() {
     document.querySelector('.biblioteka-collection-block')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  const triggerQaSectionHighlight = () => {
+    setIsQaSectionHighlighted(true);
+
+    if (qaHighlightTimerRef.current) {
+      window.clearTimeout(qaHighlightTimerRef.current);
+    }
+
+    qaHighlightTimerRef.current = window.setTimeout(() => {
+      setIsQaSectionHighlighted(false);
+      qaHighlightTimerRef.current = null;
+    }, 1600);
+  };
+
+  const handleScrollToQaSection = () => {
+    setLibraryHomeTab('qa');
+
+    if (typeof window !== 'undefined' && window.location.hash !== '#pitanja-i-odgovori') {
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#pitanja-i-odgovori`);
+    }
+
+    triggerQaSectionHighlight();
+
+    window.requestAnimationFrame(() => {
+      qaSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+
+  const handleOpenLibraryTab = () => {
+    setLibraryHomeTab('library');
+
+    if (typeof window !== 'undefined' && window.location.hash === '#pitanja-i-odgovori') {
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    }
+  };
+
+  const handleQuestionSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const question = qaQuestionInput.trim();
+    if (question.length < 12) {
+      setQaSubmitStatus('error');
+      setQaSubmitFeedback('Molimo te da pitanje bude malo detaljnije (najmanje 12 karaktera).');
+      return;
+    }
+
+    if (!canReceiveQuestions) {
+      setQaSubmitStatus('error');
+      setQaSubmitFeedback('Prijem pitanja trenutno nije aktiviran. Dodaj webhook URL ili email u podešavanja sajta.');
+      return;
+    }
+
+    const payload = {
+      question,
+      name: qaNameInput.trim() || null,
+      email: qaEmailInput.trim() || null,
+      language,
+      source: 'egv-biblioteka-qa',
+      page: typeof window !== 'undefined' ? window.location.href : null,
+      submittedAt: new Date().toISOString(),
+    };
+
+    setQaSubmitStatus('sending');
+    setQaSubmitFeedback(null);
+
+    try {
+      if (QA_SUBMISSION_WEBHOOK_URL) {
+        const shouldUseNoCors = QA_SUBMISSION_MODE === 'no-cors';
+        const response = await fetch(QA_SUBMISSION_WEBHOOK_URL, {
+          method: 'POST',
+          mode: shouldUseNoCors ? 'no-cors' : 'cors',
+          headers: shouldUseNoCors ? undefined : {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!shouldUseNoCors && !response.ok) {
+          throw new Error(`Webhook odgovor: ${response.status}`);
+        }
+      } else if (QA_RECEIVER_EMAIL) {
+        const subject = encodeURIComponent('Novo pitanje za EGV Biblioteku');
+        const body = encodeURIComponent([
+          `Pitanje: ${payload.question}`,
+          payload.name ? `Ime: ${payload.name}` : 'Ime: (nije uneto)',
+          payload.email ? `Kontakt email: ${payload.email}` : 'Kontakt email: (nije unet)',
+          '',
+          `Poslato sa: ${payload.page ?? 'nepoznato'}`,
+          `Vreme: ${payload.submittedAt}`,
+        ].join('\n'));
+
+        window.location.href = `mailto:${QA_RECEIVER_EMAIL}?subject=${subject}&body=${body}`;
+      }
+
+      setQaQuestionInput('');
+      setQaNameInput('');
+      setQaEmailInput('');
+      setQaSubmitStatus('success');
+      setQaSubmitFeedback('Hvala! Pitanje je uspešno poslato. Odgovor može biti dodat u odeljak „Pitanja i odgovori“.');
+    } catch (error) {
+      console.error(error);
+      setQaSubmitStatus('error');
+      setQaSubmitFeedback('Došlo je do greške pri slanju pitanja. Pokušaj ponovo za par trenutaka.');
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !isLibraryHome) return;
+
+    const scrollToQaFromHash = () => {
+      if (window.location.hash !== '#pitanja-i-odgovori') {
+        setLibraryHomeTab('library');
+        return;
+      }
+
+      setLibraryHomeTab('qa');
+      window.requestAnimationFrame(() => {
+        triggerQaSectionHighlight();
+        qaSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    };
+
+    scrollToQaFromHash();
+    window.addEventListener('hashchange', scrollToQaFromHash);
+
+    return () => {
+      window.removeEventListener('hashchange', scrollToQaFromHash);
+    };
+  }, [isLibraryHome]);
+
+  useEffect(() => {
+    return () => {
+      if (qaHighlightTimerRef.current) {
+        window.clearTimeout(qaHighlightTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleContinueReading = () => {
     if (!continueReadingBook || !lastReading) return;
 
@@ -1642,7 +1837,7 @@ export default function App() {
               <button
                 className="reader-darkmode-toggle"
                 type="button"
-                aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+                aria-label={dark ? 'Prebaci na svetli režim' : 'Prebaci na tamni režim'}
                 onClick={() => setDark((value) => !value)}
               >
                 {dark ? <MdLightMode /> : <MdDarkMode />}
@@ -1653,7 +1848,7 @@ export default function App() {
       </header>
 
       {isLibraryHome ? (
-      <section className="biblioteka-library-landing biblioteka-view-panel biblioteka-library-panel">
+      <section className={`biblioteka-library-landing biblioteka-view-panel biblioteka-library-panel ${libraryHomeTab === 'qa' ? 'is-qa-tab' : 'is-library-tab'}`}>
         <div className="biblioteka-library-landing-inner">
           <div className="biblioteka-library-heading">
             <div>
@@ -1666,6 +1861,20 @@ export default function App() {
             <div className="biblioteka-library-summary">
               <span className="biblioteka-library-summary-pill">{LIBRARY.length} knjiga</span>
               <span className="biblioteka-library-summary-pill">{LANGUAGE_LABELS[language]}</span>
+              <button
+                type="button"
+                className={`biblioteka-library-summary-link ${libraryHomeTab === 'library' ? 'active' : ''}`}
+                onClick={handleOpenLibraryTab}
+              >
+                Početna
+              </button>
+              <button
+                type="button"
+                className={`biblioteka-library-summary-link ${libraryHomeTab === 'qa' ? 'active' : ''}`}
+                onClick={handleScrollToQaSection}
+              >
+                Pitanja i odgovori
+              </button>
             </div>
           </div>
 
@@ -1789,7 +1998,7 @@ export default function App() {
             </div>
           </div>
 
-          <section className="biblioteka-devotional biblioteka-card biblioteka-stagger-enter" style={{ '--stagger-delay': '85ms' } as CSSProperties}>
+          <section className="biblioteka-devotional biblioteka-daily-section biblioteka-card biblioteka-stagger-enter" style={{ '--stagger-delay': '85ms' } as CSSProperties}>
             <button
               type="button"
               className={`biblioteka-devotional-trigger ${isDailyDevotionalOpen ? 'is-open' : ''}`}
@@ -1813,6 +2022,160 @@ export default function App() {
                 </div>
               </div>
             ) : null}
+          </section>
+
+          <section
+            id="pitanja-i-odgovori"
+            ref={qaSectionRef}
+            className={`biblioteka-qa-section biblioteka-card biblioteka-stagger-enter ${isQaSectionHighlighted ? 'is-highlighted' : ''}`}
+            style={{ '--stagger-delay': '100ms' } as CSSProperties}
+          >
+            <div className="biblioteka-qa-heading">
+              <nav className="biblioteka-qa-breadcrumb" aria-label="Navigacija">
+                <button type="button" className="biblioteka-qa-breadcrumb-link" onClick={handleOpenLibraryTab}>Početna</button>
+                <span className="biblioteka-qa-breadcrumb-sep" aria-hidden="true">›</span>
+                <span className="biblioteka-qa-breadcrumb-current">Pitanja i odgovori</span>
+              </nav>
+              <h3>Pitanja i odgovori</h3>
+              <p>Sažeta pitanja i detaljni odgovori na ključne duhovne teme.</p>
+            </div>
+
+            <div className="biblioteka-qa-list">
+              <section className="biblioteka-devotional">
+                <button
+                  type="button"
+                  className={`biblioteka-devotional-trigger ${isSecondComingQaOpen ? 'is-open' : ''}`}
+                  aria-expanded={isSecondComingQaOpen}
+                  onClick={() => setIsSecondComingQaOpen((current) => !current)}
+                >
+                  <div className="biblioteka-devotional-trigger-copy">
+                    <div className="biblioteka-eyebrow">{SECOND_COMING_QA.label}</div>
+                    <h3>{SECOND_COMING_QA.question}</h3>
+                  </div>
+                  <span className="biblioteka-devotional-trigger-icon" aria-hidden="true">⌄</span>
+                </button>
+
+                {isSecondComingQaOpen ? (
+                  <div className="biblioteka-devotional-body">
+                    <div className="biblioteka-devotional-content">
+                      {SECOND_COMING_QA.paragraphs.map((paragraph, index) => (
+                        <p key={`second-coming-qa-${index}`}>{paragraph}</p>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </section>
+
+              <section className="biblioteka-devotional">
+                <button
+                  type="button"
+                  className={`biblioteka-devotional-trigger ${isPerfectionQaOpen ? 'is-open' : ''}`}
+                  aria-expanded={isPerfectionQaOpen}
+                  onClick={() => setIsPerfectionQaOpen((current) => !current)}
+                >
+                  <div className="biblioteka-devotional-trigger-copy">
+                    <div className="biblioteka-eyebrow">{PERFECTION_QA.label}</div>
+                    <h3>{PERFECTION_QA.question}</h3>
+                  </div>
+                  <span className="biblioteka-devotional-trigger-icon" aria-hidden="true">⌄</span>
+                </button>
+
+                {isPerfectionQaOpen ? (
+                  <div className="biblioteka-devotional-body">
+                    <div className="biblioteka-devotional-content">
+                      {PERFECTION_QA.paragraphs.map((paragraph, index) => (
+                        <p key={`perfection-qa-${index}`}>{paragraph}</p>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </section>
+            </div>
+
+            <section className="biblioteka-qa-submit">
+              <div className="biblioteka-qa-submit-copy">
+                <div className="biblioteka-eyebrow">Pošalji pitanje</div>
+                <h4>Imaš pitanje za sledeći odgovor?</h4>
+                <p>
+                  Pošalji svoje pitanje, a zatim ćemo ga u narednom periodu obraditi i dodati kao novo
+                  „Pitanje i odgovor“.
+                </p>
+                {!canReceiveQuestions ? (
+                  <p className="biblioteka-qa-submit-config-warning">
+                    Prijem pitanja još nije aktiviran na serveru.
+                  </p>
+                ) : null}
+              </div>
+
+              <form className="biblioteka-qa-submit-form" onSubmit={handleQuestionSubmit}>
+                <label className="biblioteka-qa-submit-field">
+                  <span>Tvoje pitanje</span>
+                  <textarea
+                    value={qaQuestionInput}
+                    onChange={(event) => {
+                      setQaQuestionInput(event.target.value);
+                      if (qaSubmitStatus !== 'idle') {
+                        setQaSubmitStatus('idle');
+                        setQaSubmitFeedback(null);
+                      }
+                    }}
+                    placeholder="Napiši pitanje koje želiš da vidiš u odeljku pitanja i odgovora..."
+                    rows={5}
+                    required
+                    minLength={12}
+                    maxLength={3000}
+                  />
+                </label>
+
+                <div className="biblioteka-qa-submit-grid">
+                  <label className="biblioteka-qa-submit-field">
+                    <span>Ime (opciono)</span>
+                    <input
+                      type="text"
+                      value={qaNameInput}
+                      onChange={(event) => {
+                        setQaNameInput(event.target.value);
+                        if (qaSubmitStatus !== 'idle') {
+                          setQaSubmitStatus('idle');
+                          setQaSubmitFeedback(null);
+                        }
+                      }}
+                      placeholder="Kako da te potpišemo?"
+                      maxLength={100}
+                    />
+                  </label>
+
+                  <label className="biblioteka-qa-submit-field">
+                    <span>Email za kontakt (opciono)</span>
+                    <input
+                      type="email"
+                      value={qaEmailInput}
+                      onChange={(event) => {
+                        setQaEmailInput(event.target.value);
+                        if (qaSubmitStatus !== 'idle') {
+                          setQaSubmitStatus('idle');
+                          setQaSubmitFeedback(null);
+                        }
+                      }}
+                      placeholder="ime@primer.rs"
+                      maxLength={180}
+                    />
+                  </label>
+                </div>
+
+                <div className="biblioteka-qa-submit-actions">
+                  <button type="submit" className="biblioteka-qa-submit-button" disabled={!canReceiveQuestions || qaSubmitStatus === 'sending'}>
+                    {qaSubmitStatus === 'sending' ? 'Šaljem…' : 'Pošalji pitanje'}
+                  </button>
+
+                  {qaSubmitFeedback ? (
+                    <div className={`biblioteka-qa-submit-feedback is-${qaSubmitStatus}`} role="status" aria-live="polite">
+                      {qaSubmitFeedback}
+                    </div>
+                  ) : null}
+                </div>
+              </form>
+            </section>
           </section>
 
           <div className={`biblioteka-library-grid ${openingBookId ? 'is-transitioning' : ''}`}>

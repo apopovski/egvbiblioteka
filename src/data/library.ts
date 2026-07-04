@@ -53,6 +53,12 @@ export type RouteState = {
 
 import { SPISI_LIBRARY } from './spisiLibrary';
 
+function sanitizeImportedDescription(description: string) {
+  return String(description || '')
+    .replace(/\s*[·•]\s*(увезено из директоријума|uvezeno iz direktorijuma|imported from directory).*$/iu, '')
+    .trim();
+}
+
 export const LANGUAGE_LABELS: Record<LanguageCode, string> = {
   sr: 'Српски',
   mk: 'Македонски',
@@ -67,7 +73,13 @@ export const LANGUAGE_ROUTE_SEGMENTS: Record<LanguageCode, string> = {
   sl: 'sl',
 };
 
-export const LIBRARY: Book[] = SPISI_LIBRARY;
+export const LIBRARY: Book[] = SPISI_LIBRARY.map((book) => ({
+  ...book,
+  translations: book.translations.map((translation) => ({
+    ...translation,
+    description: sanitizeImportedDescription(translation.description),
+  })),
+}));
 
 export function getTranslation(book: Book, language: LanguageCode): BookTranslation {
   return book.translations.find((entry) => entry.language === language) ?? book.translations[0];
