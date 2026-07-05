@@ -1993,6 +1993,31 @@ export default function App() {
                 </button>
               ) : null}
 
+              {!isLibraryHome ? (
+                <div className="biblioteka-text-size-buttons-header" role="group" aria-label="Podešavanje veličine teksta">
+                  <button
+                    type="button"
+                    className="biblioteka-text-size-button-header"
+                    onClick={() => handleAdjustReaderTextScale('decrease')}
+                    disabled={isReaderTextScaleMin}
+                    aria-label="Smanji tekst"
+                    title="Smanji tekst"
+                  >
+                    A−
+                  </button>
+                  <button
+                    type="button"
+                    className="biblioteka-text-size-button-header"
+                    onClick={() => handleAdjustReaderTextScale('increase')}
+                    disabled={isReaderTextScaleMax}
+                    aria-label="Povećaj tekst"
+                    title="Povećaj tekst"
+                  >
+                    A+
+                  </button>
+                </div>
+              ) : null}
+
               <button
                 className="reader-darkmode-toggle"
                 type="button"
