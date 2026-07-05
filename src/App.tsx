@@ -148,6 +148,15 @@ function dedupeBooks(books: Book[]) {
   });
 }
 
+function createQuestionAnchorId(question: string) {
+  return `qa-${question
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')}`;
+}
+
 const LAST_READING_KEY = 'egv-last-reading';
 const LIBRARY_SCROLL_KEY = 'egv-library-scroll-y';
 const FAVORITE_BOOKS_KEY = 'egv-favorite-books';
@@ -156,6 +165,9 @@ const RECENT_SEARCH_QUERIES_KEY = 'egv-recent-search-queries';
 const PINNED_SEARCH_QUERIES_KEY = 'egv-pinned-search-queries';
 const TOPIC_PATH_COMPLETIONS_KEY = 'egv-topic-path-completions';
 const READER_TEXT_SCALE_KEY = 'egv-reader-text-scale';
+const QA_LAST_SUBMIT_TS_KEY = 'egv-qa-last-submit-ts';
+const QA_MIN_FILL_MS = 3500;
+const QA_SUBMIT_COOLDOWN_MS = 60_000;
 const LOCKED_LANGUAGE: LanguageCode = 'sr';
 const QA_SUBMISSION_WEBHOOK_URL = String(import.meta.env.VITE_QA_SUBMISSION_WEBHOOK_URL ?? '').trim();
 const QA_RECEIVER_EMAIL = String(import.meta.env.VITE_QA_RECEIVER_EMAIL ?? '').trim();
@@ -259,6 +271,59 @@ const PERFECTION_QA = {
     'Poruka trećeg anđela je nepogrešiva [Napomena: ovo se posebno odnosi na deo vesti u Otk. 14:12.] Njena svrha je da ujedini narod za obavljanje posebnog dela, pripremajući ih savršenstvom karaktera da se ujedine u jednu veliku porodicu u stanovima koje je Hristos otišao da pripremi za one koji Ga vole. I svi radnici su Božji poslenici čiji je zadatak da iznesu nepogrešivu istinu, da obave delo sjedinjavanja srca u jedno. … Izdanje rukopisa, knj. 15 [br. 1136–1185] str. 362',
   ],
 };
+
+const DEFEND_GODS_CHARACTER_QA = {
+  label: 'Pitanje i odgovor',
+  question: 'Da li poslednja generacija treba da odbrani Božji karakter?',
+  paragraphs: [
+    'Upravo pred nama je završni sukob velike borbe, kada će sa „svakom silom i znacima i lažnim čudesima, i sa svakom prevarom nepravde”, Sotona raditi na tome da pogrešno predstavi Božji karakter, kako bi mogao da „zavede, ako je moguće, i same izabrane.” Ako je ikada postojao narod kome je bila potrebna sve veća svetlost sa neba, onda je to narod koji je, u ovom vremenu opasnosti, Bog pozvao da bude čuvar njegovog svetog zakona i da opravda njegov karakter pred svetom. Oni kojima je ukazano tako sveto poverenje moraju biti oduhotvoreni, uzdignuti i oživljeni istinama za koje ispovedaju da veruju. Nikada crkvi nije bilo potrebnije, i nikada Bog nije više želeo da ona uživa u iskustvu opisanom u Pavlovoj poslanici Kološanima kada je napisao: Mi „ne prestajemo da se molimo za vas, i da želimo da se ispunite poznanjem njegove volje u svakoj mudrosti i duhovnom razumevanju; da živite dostojno Gospoda na svako ugađanje, budući plodni u svakom dobrom delu, i rastući u poznanju Boga.” Svedočanstvo za Crkvu — br. 33 str. 273',
+    'Božja reč Njegovom narodu glasi: „Izađite između njih i odvojte se, ... i ne dohvatajte se nečistog; i ja ću vas primiti, i biću vam Otac, i vi ćete biti moji sinovi i kćeri.“ „A vi ste izabrani rod, carsko sveštenstvo, sveti narod, narod koji je Bog stekao; da objavite slave Onoga koji vas je pozvao iz tame u svoju čudesnu svetlost.“ 2. Korinćanima 6:17, 18; 1. Petrova 2:9. Božji narod treba da se izdvaja kao narod koji Mu služi potpuno, celim srcem, ne pripisujući sebi nikakvu čast, i sećajući se da su se najsvečanijim zavetom obavezali da služe Gospodu i samo Njemu. Riznica svedočanstava, knj. 3 str. 286',
+  ],
+};
+
+const SUFFERING_QA = {
+  label: 'Pitanje i odgovor',
+  question: 'Zašto Bog dozvoljava bol i patnju svojih vernih sledbenika?',
+  paragraphs: [
+    'Tajanstveno proviđenje koje dopušta da ruka zlih progoni pravedne, bilo je uzrok velike zbunjenosti za mnoge slabe u veri. Neki su čak spremni da odbace poverenje u Boga zato što On dozvoljava da zli napreduju, a da najbolji i najčestitiji budu mučeni i tlačeni od njihove okrutne sile. Kako to, pitaju se neki, da onaj koji je pravedan, milostiv i neograničen u moći, trpi takvu nepravdu i nasilje? To je pitanje koje se ne tiče nas. Bog nam je dao dovoljno dokaza o svojoj ljubavi, i ako mi ne razumemo Njegove puteve, to ne treba da bude uzrok da sumnjamo u Njegovu dobrotu. Nije li Spasitelj rekao svojim učenicima, videvši unapred sumnje koje će uznemiriti njihove duše u danima kušanja i tame: „Opomenite se reči koje vam ja rekoh: nije sluga veći od gospodara svojega. Ako mene izgnaše i vas će izgnati.“ Jovan 15, 20. Isus je podneo nas radi, više nego što bi iko od njegovih sledbenika mogao postradati od okrutnosti zlih ljudi. Oni koji su pozvani da podnesu muke i mučeničku smrt, idu samo stopama Božjeg dragog Sina. Velika borba, 47.1',
+    '„Ne kasni Gospod s obećanjem.“ 2 Petrova 3, 9. On ne zaboravlja i ne zanemaruje svoju decu, ali On dozvoljava zlima da otkriju svoj pravi karakter, da ne bi niko ko želi da ispunjava Njegovu volju, bio u zabludi u pogledu njihovog karaktera. Pravedni ponovo dolaze u peć nevolje kako bi bili očišćeni i da bi svojim primerom uverili druge u stvarnost vere i pobožnosti i da bi njihovo postojano držanje osudilo neverne i bezbožne. Velika borba, 48.1',
+    'Bog dopušta da zli napreduju i pokažu svoje neprijateljstvo prema Njemu, da bi, kad budu napunili meru svog zla, svi mogli videti Njegovu pravednost i milost u njihovom potpunom uništenju. Dan Njegove osvete se približava, kada će svi koji su gazili Njegov zakon i tlačili Njegov narod, primiti pravednu platu za svoja dela. Tada će svaka okrutnost i nepravda učinjena prema Božjim vernim slugama, biti kažnjena kao da je učinjena samom Hristu. Velika borba, 48.2',
+  ],
+};
+
+const HEALTH_REFORM_QA = {
+  label: 'Pitanje i odgovor',
+  question: 'Koje je uloga i svrha zdravstvene reforme?',
+  paragraphs: [
+    '10. decembra 1871. godine, ponovo mi je pokazano da je zdravstvena reforma jedna grana velikog dela koje treba da pripremi narod za Gospodnji dolazak. Ona je tako usko povezana sa vešću trećeg anđela kao što je ruka povezana sa telom. Čovek je olako shvatao zakon deset zapovesti; ali Gospod ne bi došao da kazni prestupnike tog zakona a da im prethodno ne pošalje vest upozorenja. Treći anđeo objavljuje tu vest. Da su ljudi uvek bili poslušni zakonu deset zapovesti, sprovodeći u svojim životima načela tih propisa, prokletstvo bolesti koje sada preplavljuje svet ne bi postojalo.—Svedočanstva za crkvu 3:161, 162',
+    'Muškarci i žene ne mogu kršiti prirodni zakon udovoljavanjem izopačenom apetitu i požudnim strastima, a da ne krše Božji zakon. Zato je On dopustio da svetlost zdravstvene reforme zasvetli nad nama, kako bismo mogli videti svoj greh u kršenju zakona koje je On uspostavio u našem biću. Sva naša uživanja ili patnje mogu se pratiti do poslušnosti ili prestupa prirodnog zakona. Naš milostivi nebeski Otac vidi žalosno stanje ljudi, koji, neki svesno ali mnogi u neznanju, žive u kršenju zakona koje je On uspostavio. Iz ljubavi i sažaljenja prema ljudskom rodu, On čini da svetlost obasja zdravstvenu reformu. On objavljuje svoj zakon i kaznu koja će uslediti nakon njegovog prestupa, kako bi svi mogli naučiti i paziti da žive u skladu sa prirodnim zakonom. On tako jasno objavljuje svoj zakon, i čini ga tako istaknutim, da je on kao grad postavljen na gori. Sva odgovorna bića ga mogu razumeti ako to žele. Maloumni neće biti odgovorni. Učiniti jasnim prirodni zakon, i podsticati na njegovu poslušnost, jeste delo koje prati vest trećeg anđela, da bi se pripremio narod za Gospodnji dolazak. Saveti o životu i ishrani, str. 69',
+    '35. Pokazano mi je da je zdravstvena reforma deo poruke trećeg anđela, i da je sa njom usko povezana kao što su ruka i šaka povezane sa ljudskim telom. Videla sam da mi kao narod moramo krenuti napred u ovom velikom delu. Propovednici i narod moraju delovati složno. Božji narod nije spreman za glasni poklič trećeg anđela. Oni moraju obaviti delo za sebe koje ne bi smeli da prepuste Bogu da ga On obavi umesto njih. On je to delo ostavio njima da ga izvrše. To je lično delo; niko ga ne može obaviti za drugoga. „Imajući, dakle, ovakva obećanja, ljubljeni, očistimo sebe od svake prljavštine tela i duha, usavršavajući svetost u strahu Božijem.” Proždrljivost je preovlađujući greh ovog doba. Pohotni apetit pretvara muškarce i žene u robove, zamagljuje njihov razum i zatupljuje njihova moralna osećanja do te mere da se svete, uzvišene istine Božije reči ne cene. Niže sklonosti su zavladale muškarcima i ženama. Saveti o životu i ishrani, str. 32',
+    '108. Vidim u Gospodnjem proviđenju da zdravstveno-misionarski rad treba da bude veliki prodorni klin, pomoću kojeg se može dopreti do bolesne duše. Saveti o životu i ishrani, str. 76',
+    '109. Mnogo predrasuda koje sprečavaju da istina poruke trećeg anđela dopre do srca ljudi, moglo bi se ukloniti kada bi se više pažnje posvetilo zdravstvenoj reformi. Kada se ljudi zainteresuju za ovaj predmet, često se priprema put za ulazak drugih istina. Ako vide da smo razumni u pogledu zdravlja, biće spremniji da veruju da smo utemeljeni u biblijskim doktrinama. Saveti o životu i ishrani, str. 76',
+    'Neznanje sada nije izgovor za prestup zakona. Svetlost sija jasno i niko ne mora biti u neznanju, jer je sam veliki Bog čovekov učitelj. Svi su obavezani najsvetijim obavezama prema Bogu da obrate pažnju na zdravu filozofiju i autentično iskustvo koje im On sada daje u pogledu zdravstvene reforme. Njegova je namera da se velika tema zdravstvene reforme pokrene i da se um javnosti duboko podstakne na istraživanje; jer je nemoguće da muškarci i žene, sa svim svojim grešnim navikama koje uništavaju zdravlje i slabe mozak, razaznaju svetu istinu, kroz koju treba da budu posvećeni, prečišćeni, uzdignuti i učinjeni podobnim za društvo nebeskih anđela u carstvu slave.... Saveti o životu i ishrani, str. 70',
+    'Apostol Pavle opominje crkvu: „Molim vas, dakle, braćo, milosti Božije radi, da prinesete svoja tela u žrtvu živu, svetu, ugodnu Bogu; što je vaša razumna služba.“ Ljudi, dakle, mogu učiniti svoja tela nesvetim grešnim udovoljavanjima. Ako su nesveti, oni su nepodobni da budu duhovni poklonici i nisu dostojni neba. Ako čovek bude cenio svetlost koju mu Bog u milosti daje o zdravstvenoj reformi, on može biti posvećen kroz istinu i osposobljen za besmrtnost. Ali ako zanemari tu svetlost i živi kršeći prirodni zakon, mora platiti kaznu. Saveti o životu i ishrani, str. 70',
+    'Veliki predmet reforme treba da bude pokrenut, a um javnosti probuđen. Umerenost u svemu treba da bude povezana sa porukom, kako bi se Božji narod odvratio od svog idolopoklonstva, svoje proždrljivosti i svoje rasipnosti u oblačenju i drugim stvarima.—Svedočanstva za Crkvu 3:61-64',
+    'Samoodricanje, poniznost i umerenost koji se zahtevaju od pravednika, koje Bog posebno vodi i blagosilja, treba da se predstave ljudima kao suprotnost rasipničkim navikama koje uništavaju zdravlje onih koji žive u ovom izopačenom dobu. Bog je pokazao da je zdravstvena reforma jednako blisko povezana sa vešću trećeg anđela kao što je ruka povezana sa telom. Nigde se ne može naći tako veliki uzrok fizičke i moralne izopačenosti kao što je zanemarivanje ovog važnog predmeta. Oni koji ugađaju apetitu i strastima, i zatvaraju oči pred svetlošću iz straha da će videti grešna popuštanja koja nisu voljni da napuste, krivi su pred Bogom.',
+    'Ko god se odvrati od svetlosti u jednom slučaju, otvrdnjava svoje srce da bi zanemario svetlost i u drugim pitanjima. Ko god krši moralne obaveze po pitanju jela i oblačenja, priprema put za kršenje Božjih zahteva u pogledu večnih interesa....',
+    'Narod koji Bog vodi biće poseban. Oni neće biti poput sveta. Ali ako slede Božje vođstvo, oni će ostvariti Njegove namere i potčiniće svoju volju Njegovoj volji. Hristos će prebivati u srcu. Božji hram će biti svet. Vaše telo, kaže apostol, hram je Svetog Duha. Saveti o životu i ishrani, str. 71-72',
+    'Vladajuća moć apetita pokazaće se kao propast za hiljade, dok bi, da su pobedili u ovom pogledu, imali moralnu snagu da izvojuju pobedu nad svakim drugim Sataninim iskušenjem. Ali oni koji su robovi apetita neće uspeti u usavršavanju hrišćanskog karaktera. Neprestani čovekov prestup tokom šest hiljada godina doneo je bolest, bol i smrt kao svoje plodove. I kako se približavamo kraju vremena, Satanino iskušenje da se povlađuje apetitu biće snažnije i teže za nadvladavanje. Samo kroz poslušnost i neprestani trud mi ćemo nadvladati, kao što je i Hristos nadvladao. Studije svedočenja o ishrani i jelu, str. 36',
+  ],
+};
+
+const QA_SECTION_ID = 'pitanja-i-odgovori';
+const SECOND_COMING_QA_ID = createQuestionAnchorId(SECOND_COMING_QA.question);
+const PERFECTION_QA_ID = createQuestionAnchorId(PERFECTION_QA.question);
+const DEFEND_GODS_CHARACTER_QA_ID = createQuestionAnchorId(DEFEND_GODS_CHARACTER_QA.question);
+const SUFFERING_QA_ID = createQuestionAnchorId(SUFFERING_QA.question);
+const HEALTH_REFORM_QA_ID = createQuestionAnchorId(HEALTH_REFORM_QA.question);
+const QA_ANCHOR_ITEMS = [
+  { id: SECOND_COMING_QA_ID, question: SECOND_COMING_QA.question },
+  { id: PERFECTION_QA_ID, question: PERFECTION_QA.question },
+  { id: DEFEND_GODS_CHARACTER_QA_ID, question: DEFEND_GODS_CHARACTER_QA.question },
+  { id: SUFFERING_QA_ID, question: SUFFERING_QA.question },
+  { id: HEALTH_REFORM_QA_ID, question: HEALTH_REFORM_QA.question },
+] as const;
+const QA_ANCHOR_IDS = new Set<string>(QA_ANCHOR_ITEMS.map((item) => item.id));
 
 const EDITORIAL_QUICK_TOPICS = [
   'Hristos',
@@ -547,9 +612,13 @@ export default function App() {
   const [isDailyDevotionalOpen, setIsDailyDevotionalOpen] = useState(false);
   const [isSecondComingQaOpen, setIsSecondComingQaOpen] = useState(false);
   const [isPerfectionQaOpen, setIsPerfectionQaOpen] = useState(false);
+  const [isDefendGodsCharacterQaOpen, setIsDefendGodsCharacterQaOpen] = useState(false);
+  const [isSufferingQaOpen, setIsSufferingQaOpen] = useState(false);
+  const [isHealthReformQaOpen, setIsHealthReformQaOpen] = useState(false);
   const [qaQuestionInput, setQaQuestionInput] = useState('');
   const [qaNameInput, setQaNameInput] = useState('');
   const [qaEmailInput, setQaEmailInput] = useState('');
+  const [qaWebsiteInput, setQaWebsiteInput] = useState('');
   const [qaSubmitStatus, setQaSubmitStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [qaSubmitFeedback, setQaSubmitFeedback] = useState<string | null>(null);
   const [visitorInsight, setVisitorInsight] = useState<VisitorInsight>({
@@ -565,7 +634,10 @@ export default function App() {
   const [activeSearchResultId, setActiveSearchResultId] = useState<string | null>(null);
   const [isQaSectionHighlighted, setIsQaSectionHighlighted] = useState(false);
   const [libraryHomeTab, setLibraryHomeTab] = useState<'library' | 'qa'>(() => (
-    typeof window !== 'undefined' && window.location.hash === '#pitanja-i-odgovori' ? 'qa' : 'library'
+    typeof window !== 'undefined' && (
+      window.location.hash === `#${QA_SECTION_ID}` ||
+      QA_ANCHOR_IDS.has(window.location.hash.replace(/^#/, ''))
+    ) ? 'qa' : 'library'
   ));
   const openBookTimerRef = useRef<number | null>(null);
   const qaHighlightTimerRef = useRef<number | null>(null);
@@ -573,6 +645,8 @@ export default function App() {
   const searchResultRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const contentCardRef = useRef<HTMLDivElement | null>(null);
   const qaSectionRef = useRef<HTMLElement | null>(null);
+  const qaQuestionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const qaFirstInteractionAtRef = useRef<number | null>(null);
 
   const isLibraryHome = !selectedBookId;
   const canReceiveQuestions = Boolean(QA_SUBMISSION_WEBHOOK_URL || QA_RECEIVER_EMAIL);
@@ -1567,8 +1641,8 @@ export default function App() {
   const handleScrollToQaSection = () => {
     setLibraryHomeTab('qa');
 
-    if (typeof window !== 'undefined' && window.location.hash !== '#pitanja-i-odgovori') {
-      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#pitanja-i-odgovori`);
+    if (typeof window !== 'undefined' && window.location.hash !== `#${QA_SECTION_ID}`) {
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#${QA_SECTION_ID}`);
     }
 
     triggerQaSectionHighlight();
@@ -1578,16 +1652,85 @@ export default function App() {
     });
   };
 
+  const openQaQuestionByAnchor = (anchorId: string) => {
+    if (anchorId === SECOND_COMING_QA_ID) {
+      setIsSecondComingQaOpen(true);
+      return;
+    }
+
+    if (anchorId === PERFECTION_QA_ID) {
+      setIsPerfectionQaOpen(true);
+      return;
+    }
+
+    if (anchorId === DEFEND_GODS_CHARACTER_QA_ID) {
+      setIsDefendGodsCharacterQaOpen(true);
+      return;
+    }
+
+    if (anchorId === SUFFERING_QA_ID) {
+      setIsSufferingQaOpen(true);
+      return;
+    }
+
+    if (anchorId === HEALTH_REFORM_QA_ID) {
+      setIsHealthReformQaOpen(true);
+    }
+  };
+
+  const handleScrollToQaQuestion = (anchorId: string) => {
+    setLibraryHomeTab('qa');
+    openQaQuestionByAnchor(anchorId);
+
+    if (typeof window !== 'undefined' && window.location.hash !== `#${anchorId}`) {
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#${anchorId}`);
+    }
+
+    triggerQaSectionHighlight();
+
+    window.requestAnimationFrame(() => {
+      qaQuestionRefs.current[anchorId]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+
   const handleOpenLibraryTab = () => {
     setLibraryHomeTab('library');
 
-    if (typeof window !== 'undefined' && window.location.hash === '#pitanja-i-odgovori') {
-      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+    if (typeof window !== 'undefined') {
+      const hashValue = window.location.hash.replace(/^#/, '');
+      if (hashValue === QA_SECTION_ID || QA_ANCHOR_IDS.has(hashValue)) {
+        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+      }
     }
   };
 
   const handleQuestionSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    const now = Date.now();
+    const firstInteractionAt = qaFirstInteractionAtRef.current ?? now;
+
+    if (qaWebsiteInput.trim()) {
+      setQaSubmitStatus('error');
+      setQaSubmitFeedback('Slanje nije uspelo. Pokušaj ponovo.');
+      return;
+    }
+
+    if (now - firstInteractionAt < QA_MIN_FILL_MS) {
+      setQaSubmitStatus('error');
+      setQaSubmitFeedback('Molimo sačekaj par sekundi pre slanja pitanja.');
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      const lastSubmitAtRaw = Number(window.localStorage.getItem(QA_LAST_SUBMIT_TS_KEY));
+      if (Number.isFinite(lastSubmitAtRaw) && now - lastSubmitAtRaw < QA_SUBMIT_COOLDOWN_MS) {
+        const remainingSeconds = Math.ceil((QA_SUBMIT_COOLDOWN_MS - (now - lastSubmitAtRaw)) / 1000);
+        setQaSubmitStatus('error');
+        setQaSubmitFeedback(`Sačekaj još ${remainingSeconds}s pre sledećeg slanja.`);
+        return;
+      }
+    }
 
     const question = qaQuestionInput.trim();
     if (question.length < 12) {
@@ -1647,6 +1790,11 @@ export default function App() {
       setQaQuestionInput('');
       setQaNameInput('');
       setQaEmailInput('');
+      setQaWebsiteInput('');
+      qaFirstInteractionAtRef.current = null;
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(QA_LAST_SUBMIT_TS_KEY, String(Date.now()));
+      }
       setQaSubmitStatus('success');
       setQaSubmitFeedback('Hvala! Pitanje je uspešno poslato. Odgovor može biti dodat u odeljak „Pitanja i odgovori“.');
     } catch (error) {
@@ -1660,7 +1808,11 @@ export default function App() {
     if (typeof window === 'undefined' || !isLibraryHome) return;
 
     const scrollToQaFromHash = () => {
-      if (window.location.hash !== '#pitanja-i-odgovori') {
+      const hashValue = window.location.hash.replace(/^#/, '');
+      const isQaSectionHash = hashValue === QA_SECTION_ID;
+      const isQaQuestionHash = QA_ANCHOR_IDS.has(hashValue);
+
+      if (!isQaSectionHash && !isQaQuestionHash) {
         setLibraryHomeTab('library');
         return;
       }
@@ -1668,6 +1820,13 @@ export default function App() {
       setLibraryHomeTab('qa');
       window.requestAnimationFrame(() => {
         triggerQaSectionHighlight();
+
+        if (isQaQuestionHash) {
+          openQaQuestionByAnchor(hashValue);
+          qaQuestionRefs.current[hashValue]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          return;
+        }
+
         qaSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     };
@@ -2025,7 +2184,7 @@ export default function App() {
           </section>
 
           <section
-            id="pitanja-i-odgovori"
+            id={QA_SECTION_ID}
             ref={qaSectionRef}
             className={`biblioteka-qa-section biblioteka-card biblioteka-stagger-enter ${isQaSectionHighlighted ? 'is-highlighted' : ''}`}
             style={{ '--stagger-delay': '100ms' } as CSSProperties}
@@ -2040,8 +2199,30 @@ export default function App() {
               <p>Sažeta pitanja i detaljni odgovori na ključne duhovne teme.</p>
             </div>
 
+            <nav className="biblioteka-qa-anchor-nav" aria-label="Skok na pitanje">
+              {QA_ANCHOR_ITEMS.map((item) => (
+                <a
+                  key={item.id}
+                  href={`#${item.id}`}
+                  className="biblioteka-qa-anchor-link"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    handleScrollToQaQuestion(item.id);
+                  }}
+                >
+                  {item.question}
+                </a>
+              ))}
+            </nav>
+
             <div className="biblioteka-qa-list">
-              <section className="biblioteka-devotional">
+              <section
+                id={SECOND_COMING_QA_ID}
+                ref={(node) => {
+                  qaQuestionRefs.current[SECOND_COMING_QA_ID] = node;
+                }}
+                className="biblioteka-devotional"
+              >
                 <button
                   type="button"
                   className={`biblioteka-devotional-trigger ${isSecondComingQaOpen ? 'is-open' : ''}`}
@@ -2066,7 +2247,13 @@ export default function App() {
                 ) : null}
               </section>
 
-              <section className="biblioteka-devotional">
+              <section
+                id={PERFECTION_QA_ID}
+                ref={(node) => {
+                  qaQuestionRefs.current[PERFECTION_QA_ID] = node;
+                }}
+                className="biblioteka-devotional"
+              >
                 <button
                   type="button"
                   className={`biblioteka-devotional-trigger ${isPerfectionQaOpen ? 'is-open' : ''}`}
@@ -2090,6 +2277,99 @@ export default function App() {
                   </div>
                 ) : null}
               </section>
+
+              <section
+                id={DEFEND_GODS_CHARACTER_QA_ID}
+                ref={(node) => {
+                  qaQuestionRefs.current[DEFEND_GODS_CHARACTER_QA_ID] = node;
+                }}
+                className="biblioteka-devotional"
+              >
+                <button
+                  type="button"
+                  className={`biblioteka-devotional-trigger ${isDefendGodsCharacterQaOpen ? 'is-open' : ''}`}
+                  aria-expanded={isDefendGodsCharacterQaOpen}
+                  onClick={() => setIsDefendGodsCharacterQaOpen((current) => !current)}
+                >
+                  <div className="biblioteka-devotional-trigger-copy">
+                    <div className="biblioteka-eyebrow">{DEFEND_GODS_CHARACTER_QA.label}</div>
+                    <h3>{DEFEND_GODS_CHARACTER_QA.question}</h3>
+                  </div>
+                  <span className="biblioteka-devotional-trigger-icon" aria-hidden="true">⌄</span>
+                </button>
+
+                {isDefendGodsCharacterQaOpen ? (
+                  <div className="biblioteka-devotional-body">
+                    <div className="biblioteka-devotional-content">
+                      {DEFEND_GODS_CHARACTER_QA.paragraphs.map((paragraph, index) => (
+                        <p key={`defend-gods-character-qa-${index}`}>{paragraph}</p>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </section>
+
+              <section
+                id={SUFFERING_QA_ID}
+                ref={(node) => {
+                  qaQuestionRefs.current[SUFFERING_QA_ID] = node;
+                }}
+                className="biblioteka-devotional"
+              >
+                <button
+                  type="button"
+                  className={`biblioteka-devotional-trigger ${isSufferingQaOpen ? 'is-open' : ''}`}
+                  aria-expanded={isSufferingQaOpen}
+                  onClick={() => setIsSufferingQaOpen((current) => !current)}
+                >
+                  <div className="biblioteka-devotional-trigger-copy">
+                    <div className="biblioteka-eyebrow">{SUFFERING_QA.label}</div>
+                    <h3>{SUFFERING_QA.question}</h3>
+                  </div>
+                  <span className="biblioteka-devotional-trigger-icon" aria-hidden="true">⌄</span>
+                </button>
+
+                {isSufferingQaOpen ? (
+                  <div className="biblioteka-devotional-body">
+                    <div className="biblioteka-devotional-content">
+                      {SUFFERING_QA.paragraphs.map((paragraph, index) => (
+                        <p key={`suffering-qa-${index}`}>{paragraph}</p>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </section>
+
+              <section
+                id={HEALTH_REFORM_QA_ID}
+                ref={(node) => {
+                  qaQuestionRefs.current[HEALTH_REFORM_QA_ID] = node;
+                }}
+                className="biblioteka-devotional"
+              >
+                <button
+                  type="button"
+                  className={`biblioteka-devotional-trigger ${isHealthReformQaOpen ? 'is-open' : ''}`}
+                  aria-expanded={isHealthReformQaOpen}
+                  onClick={() => setIsHealthReformQaOpen((current) => !current)}
+                >
+                  <div className="biblioteka-devotional-trigger-copy">
+                    <div className="biblioteka-eyebrow">{HEALTH_REFORM_QA.label}</div>
+                    <h3>{HEALTH_REFORM_QA.question}</h3>
+                  </div>
+                  <span className="biblioteka-devotional-trigger-icon" aria-hidden="true">⌄</span>
+                </button>
+
+                {isHealthReformQaOpen ? (
+                  <div className="biblioteka-devotional-body">
+                    <div className="biblioteka-devotional-content">
+                      {HEALTH_REFORM_QA.paragraphs.map((paragraph, index) => (
+                        <p key={`health-reform-qa-${index}`}>{paragraph}</p>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </section>
             </div>
 
             <section className="biblioteka-qa-submit">
@@ -2108,11 +2388,31 @@ export default function App() {
               </div>
 
               <form className="biblioteka-qa-submit-form" onSubmit={handleQuestionSubmit}>
+                <label className="biblioteka-qa-submit-honeypot" aria-hidden="true">
+                  <span>Website</span>
+                  <input
+                    type="text"
+                    name="website"
+                    value={qaWebsiteInput}
+                    onChange={(event) => {
+                      setQaWebsiteInput(event.target.value);
+                      if (qaFirstInteractionAtRef.current === null) {
+                        qaFirstInteractionAtRef.current = Date.now();
+                      }
+                    }}
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
+                </label>
+
                 <label className="biblioteka-qa-submit-field">
                   <span>Tvoje pitanje</span>
                   <textarea
                     value={qaQuestionInput}
                     onChange={(event) => {
+                      if (qaFirstInteractionAtRef.current === null) {
+                        qaFirstInteractionAtRef.current = Date.now();
+                      }
                       setQaQuestionInput(event.target.value);
                       if (qaSubmitStatus !== 'idle') {
                         setQaSubmitStatus('idle');
@@ -2129,28 +2429,34 @@ export default function App() {
 
                 <div className="biblioteka-qa-submit-grid">
                   <label className="biblioteka-qa-submit-field">
-                    <span>Ime (opciono)</span>
+                    <span>Ime (opcionalno)</span>
                     <input
                       type="text"
                       value={qaNameInput}
                       onChange={(event) => {
+                        if (qaFirstInteractionAtRef.current === null) {
+                          qaFirstInteractionAtRef.current = Date.now();
+                        }
                         setQaNameInput(event.target.value);
                         if (qaSubmitStatus !== 'idle') {
                           setQaSubmitStatus('idle');
                           setQaSubmitFeedback(null);
                         }
                       }}
-                      placeholder="Kako da te potpišemo?"
+                      placeholder="Jelena Petrović"
                       maxLength={100}
                     />
                   </label>
 
                   <label className="biblioteka-qa-submit-field">
-                    <span>Email za kontakt (opciono)</span>
+                    <span>Email za kontakt (opcionalno)</span>
                     <input
                       type="email"
                       value={qaEmailInput}
                       onChange={(event) => {
+                        if (qaFirstInteractionAtRef.current === null) {
+                          qaFirstInteractionAtRef.current = Date.now();
+                        }
                         setQaEmailInput(event.target.value);
                         if (qaSubmitStatus !== 'idle') {
                           setQaSubmitStatus('idle');

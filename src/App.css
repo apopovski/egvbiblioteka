@@ -427,6 +427,37 @@
   line-height:1.62;
 }
 
+.biblioteka-qa-anchor-nav{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.biblioteka-qa-anchor-link{
+  display:inline-flex;
+  align-items:center;
+  padding:8px 12px;
+  border-radius:999px;
+  border:1px solid color-mix(in srgb, var(--reader-accent) 26%, var(--reader-border));
+  background:color-mix(in srgb, var(--reader-accent) 8%, var(--reader-modal-bg));
+  color:var(--reader-modal-fg);
+  text-decoration:none;
+  font-size:.88rem;
+  line-height:1.35;
+  transition:border-color .18s ease, background .18s ease, transform .18s ease;
+}
+
+.biblioteka-qa-anchor-link:hover{
+  border-color:color-mix(in srgb, var(--reader-accent) 44%, var(--reader-border));
+  background:color-mix(in srgb, var(--reader-accent) 14%, var(--reader-modal-bg));
+  transform:translateY(-1px);
+}
+
+.biblioteka-qa-anchor-link:focus-visible{
+  outline:2px solid color-mix(in srgb, var(--reader-accent) 58%, transparent);
+  outline-offset:2px;
+}
+
 .biblioteka-qa-list{
   display:grid;
   gap:14px;
@@ -462,6 +493,16 @@
 .biblioteka-qa-submit-form{
   display:grid;
   gap:12px;
+}
+
+.biblioteka-qa-submit-honeypot{
+  position:absolute;
+  left:-10000px;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+  opacity:0;
+  pointer-events:none;
 }
 
 .biblioteka-qa-submit-grid{
