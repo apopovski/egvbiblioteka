@@ -2019,7 +2019,6 @@ export default function App() {
             </div>
             <div className="biblioteka-library-summary">
               <span className="biblioteka-library-summary-pill">{LIBRARY.length} knjiga</span>
-              <span className="biblioteka-library-summary-pill">{LANGUAGE_LABELS[language]}</span>
               <button
                 type="button"
                 className={`biblioteka-library-summary-link ${libraryHomeTab === 'library' ? 'active' : ''}`}
